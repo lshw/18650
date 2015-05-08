@@ -1385,7 +1385,7 @@ Element["" "LED2x" "LED5" "unknown" 86.8645mm 38.0794mm 3.2260mm -3.1460mm 0 100
 
 Element["" "" "" "" 100.00mil 100.00mil -1.3415mm -8.2280mm 0 100 ""]
 (
-	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "warn,thermal(0X,5X)"]
+	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "thermal(0X,5X)"]
 
 	)
 
@@ -1526,19 +1526,19 @@ Element["" "18650" "BAT1" "unknown" 13.6530mm 42.9313mm -30.00mil 70.00mil 0 100
 
 Element["" "" "" "" 3840.00mil 100.00mil 0.0000 0.0000 0 100 ""]
 (
-	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "warn,thermal(0X,5X)"]
+	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "thermal(0X,5X)"]
 
 	)
 
 Element["" "" "" "" 100.00mil 4430.00mil 0.0000 0.0000 0 100 ""]
 (
-	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "warn,thermal(0X,5X)"]
+	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "thermal(0X,5X)"]
 
 	)
 
 Element["" "" "" "" 3840.00mil 4430.00mil 0.0000 0.0000 0 100 ""]
 (
-	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "warn,thermal(0X,5X)"]
+	Pin[0.0000 0.0000 150.00mil 40.00mil 156.00mil 120.00mil "" "1" "thermal(0X,5X)"]
 
 	)
 
@@ -1549,10 +1549,10 @@ Element["" "microusb" "CONN7" "unknown" 98.4067mm 14.3925mm -8.56mil 0.1710mm 3 
 	Attribute("manufacturer_part_number" "unknown")
 	Attribute("vendor" "unknown")
 	Attribute("vendor_part_number" "unknown")
-	Pin[-106.30mil 98.43mil 51.00mil 20.00mil 57.00mil 35.00mil "t" "6" "warn,thermal(0X)"]
-	Pin[-106.30mil -98.43mil 51.00mil 20.00mil 57.00mil 35.00mil "t" "7" "warn,thermal(0X)"]
-	Pin[0.0000 133.86mil 61.00mil 20.00mil 67.00mil 45.00mil "t" "8" "warn,thermal(0X)"]
-	Pin[0.0000 -133.86mil 61.00mil 20.00mil 67.00mil 45.00mil "t" "9" "warn,thermal(0X)"]
+	Pin[-106.30mil 98.43mil 51.00mil 20.00mil 57.00mil 35.00mil "t" "6" "thermal(0X)"]
+	Pin[-106.30mil -98.43mil 51.00mil 20.00mil 57.00mil 35.00mil "t" "7" "thermal(0X)"]
+	Pin[0.0000 133.86mil 61.00mil 20.00mil 67.00mil 45.00mil "t" "8" "thermal(0X)"]
+	Pin[0.0000 -133.86mil 61.00mil 20.00mil 67.00mil 45.00mil "t" "9" "thermal(0X)"]
 	Pad[-125.20mil 0.0000 -87.80mil 0.0000 15.75mil 20.00mil 25.75mil "3" "3" "square"]
 	Pad[-125.20mil -25.59mil -87.80mil -25.59mil 15.75mil 20.00mil 25.75mil "" "" "square"]
 	Pad[-125.20mil 25.59mil -87.80mil 25.59mil 15.75mil 20.00mil 25.75mil "2" "2" "square"]
@@ -1827,7 +1827,7 @@ Element["" "SOT223" "U7" "unknown" 780.00mil 974.00mil 115.00mil -447.00mil 0 10
 	Pad[0.0000 -33.00mil 0.0000 33.00mil 56.00mil 30.00mil 62.00mil "1" "1" "square,edge2"]
 	Pad[90.00mil -33.00mil 90.00mil 33.00mil 56.00mil 30.00mil 62.00mil "2" "2" "square,edge2"]
 	Pad[181.00mil -33.00mil 181.00mil 33.00mil 56.00mil 30.00mil 62.00mil "3" "3" "square,edge2"]
-	Pad[45.00mil -244.00mil 135.00mil -244.00mil 122.00mil 30.00mil 128.00mil "4" "4" "square,warn"]
+	Pad[45.00mil -244.00mil 135.00mil -244.00mil 122.00mil 30.00mil 128.00mil "4" "4" "square"]
 	ElementLine [-52.00mil -329.00mil -52.00mil 85.00mil 10.00mil]
 	ElementLine [-52.00mil 85.00mil 233.00mil 85.00mil 10.00mil]
 	ElementLine [233.00mil -329.00mil 233.00mil 85.00mil 10.00mil]
@@ -1887,7 +1887,7 @@ Element["" "SWITCH" "S1" "unknown" 3670.00mil 880.00mil 70.00mil -70.00mil 0 100
 	Attribute("manufacturer_part_number" "unknown")
 	Attribute("vendor" "unknown")
 	Attribute("vendor_part_number" "unknown")
-	Pin[210.00mil -10.00mil 76.00mil 40.00mil 82.00mil 50.00mil "2" "2" "warn,thermal(0X)"]
+	Pin[210.00mil -10.00mil 76.00mil 40.00mil 82.00mil 50.00mil "2" "2" "thermal(0X)"]
 	Pin[0.0000 0.0000 76.00mil 40.00mil 82.00mil 50.00mil "1" "1" ""]
 	Pin[0.0000 250.00mil 76.00mil 40.00mil 82.00mil 50.00mil "1" "1" ""]
 	Pin[210.00mil 250.00mil 76.00mil 40.00mil 82.00mil 50.00mil "2" "2" "thermal(0X)"]
@@ -1903,12 +1903,12 @@ Element["" "power1" "CONN1" "unknown" 550.00mil 1125.00mil -5.6648mm -4.5804mm 0
 	Attribute("manufacturer_part_number" "unknown")
 	Attribute("vendor" "unknown")
 	Attribute("vendor_part_number" "unknown")
-	Pin[-280.00mil 0.0000 66.00mil 40.00mil 72.00mil 40.00mil "" "" "warn,edge2,thermal(0X,5X)"]
+	Pin[-280.00mil 0.0000 66.00mil 40.00mil 72.00mil 40.00mil "" "" "edge2,thermal(0X,5X)"]
 	Pin[-280.00mil -35.00mil 66.00mil 40.00mil 72.00mil 40.00mil "2" "2" "edge2,thermal(0X,5X)"]
-	Pin[-280.00mil -70.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "" "warn,edge2"]
-	Pin[0.0000 0.0000 66.00mil 40.00mil 72.00mil 40.00mil "" "" "warn,edge2"]
+	Pin[-280.00mil -70.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "" "edge2"]
+	Pin[0.0000 0.0000 66.00mil 40.00mil 72.00mil 40.00mil "" "" "edge2"]
 	Pin[0.0000 -35.00mil 66.00mil 40.00mil 72.00mil 40.00mil "1" "1" "edge2"]
-	Pin[0.0000 -70.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "" "warn,edge2"]
+	Pin[0.0000 -70.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "" "edge2"]
 	Pin[-130.00mil 200.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "" "edge2"]
 	Pin[-165.00mil 200.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "3" "edge2,thermal(0X)"]
 	Pin[-200.00mil 200.00mil 66.00mil 40.00mil 72.00mil 40.00mil "" "" "edge2"]
@@ -2138,7 +2138,7 @@ Element["" "1602a" "LCD1" "unknown" 22.3358mm 2.1216mm 0.0000 0.0000 2 100 ""]
 	Pin[200.00mil 0.0000 60.00mil 30.00mil 66.00mil 28.00mil "VEE" "3" "edge2"]
 	Pin[0.0000 0.0000 60.00mil 30.00mil 66.00mil 28.00mil "" "1" "edge2,thermal(0X,5X)"]
 	Pin[-200.00mil 0.0000 130.00mil 30.00mil 136.00mil 108.00mil "" "1" "edge2,thermal(0X,5X)"]
-	Pin[2700.00mil 0.0000 130.00mil 30.00mil 136.00mil 108.00mil "D6" "13" "warn,edge2,thermal(0X,5X)"]
+	Pin[2700.00mil 0.0000 130.00mil 30.00mil 136.00mil 108.00mil "D6" "13" "edge2,thermal(0X,5X)"]
 	Pin[2700.00mil 1200.00mil 130.00mil 30.00mil 136.00mil 108.00mil "" "1" "edge2,thermal(0X,5X)"]
 	Pin[-200.00mil 1200.00mil 130.00mil 30.00mil 136.00mil 108.00mil "" "1" "edge2,thermal(0X,5X)"]
 	ElementLine [-50.00mil 50.00mil 1550.00mil 50.00mil 10.00mil]
@@ -2708,7 +2708,7 @@ Layer(6 "bottom")
 	Line[1220.00mil 1120.00mil 985.57mil 1120.00mil 10.00mil 40.00mil "clearline"]
 	Line[985.57mil 1120.00mil 926.57mil 1179.00mil 10.00mil 40.00mil "clearline"]
 	Line[48.2818mm 780.00mil 47.5198mm 780.00mil 25.00mil 40.00mil "clearline"]
-	Text[430.00mil 3690.00mil 0 1148 "CFIDO.COM" "clearline,onsolder"]
+	Text[3400.00mil 3050.00mil 2 1148 "CFIDO.COM" "clearline,onsolder"]
 	Polygon("clearpoly")
 	(
 		[0.0000 4530.00mil] [3940.00mil 4530.00mil] [3940.00mil 0.0000] [0.0000 0.0000] 
