@@ -27,19 +27,27 @@ void sdSave(String dataString) {
 }
 }
 void charge()
-{
+{ //电池1充电
 pinMode(9,INPUT);
-digitalWrite(9,LOW);
-pinMode(2,OUTPUT);
-digitalWrite(2,HIGH);
+digitalWrite(9,LOW); //pin9 高阻
+pinMode(2,OUTPUT);   
+digitalWrite(2,LOw);  //pin2 拉低
 }
 void Discharge()
-{
+{ //电池1放电
 pinMode(9,OUTPUT);
-digitalWrite(9,HIGH);
+digitalWrite(9,HIGH);  //pin9 拉高
 pinMode(2,OUTPUT);
-digitalWrite(2,LOW);
+digitalWrite(2,HIGH);   //pin2 拉高
 }
+void poweroff()
+{ //电池1不充不放
+pinMode(9,OUTPUT);
+digitalWrite(9,HIGH);  //pin9 拉高
+pinMode(2,OUTPUT);
+digitalWrite(2,LOW);   //pin2 拉低
+}
+
 float getval(int VIN)   //读取电流电压值  电流为ma ，电压为V
 {
   __volatile__ uint16_t i;  //不做GCC优化，否则第一次AD会被优化掉
