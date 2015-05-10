@@ -5,8 +5,8 @@
 #define IC4 A2 //Vref R0=0.1 4号电池充电电流
 #define IC5 A3 //Vref R0=0.1 5号电池充电电流
 #define IF1 A5 //Vref R0=0.1 1号电池放电电流
-#define VCC A4 //Vref=3.3  V5=3.3*VCC/1024/49.9*(49.9+499); //外接电源电压
-#define V1 A6  //Vref=3.3 3.3*V1/1024/2  //1号电池电压
+#define VCC A4 //Vref=1.1  V5=1.1*VCC/1024/22.9*(22.9+499); //外接电源电压
+#define V1 A6  //Vref=1.1 1.1*V1/1024/97*(97+499)  //1号电池电压
 #include<stdlib.h>
 
 #include <LiquidCrystal.h>   //LCD1602a 驱动
@@ -54,12 +54,12 @@ float getval(int VIN)   //读取电流电压值  电流为ma ，电压为V
   float val;
   switch(VIN) {
   case VCC:
-    analogReference(DEFAULT); //3.3V
-    val=3.3*(49.9+499)/49.9/1024;  //外接分压电阻
+    analogReference(INTERNAL); //3.3V
+    val=1.1*(22.9+499)/22.9/1024;  //外接分压电阻
     break;
   case V1:
-    analogReference(DEFAULT); //3.3V
-    val=3.3*2/1024;                       
+    analogReference(INTERNAL); //3.3V
+    val=1.1*(97+499)/97/1024;                       
     break;
   default:
     analogReference(EXTERNAL);  //3.3V*68/(2000+68)
