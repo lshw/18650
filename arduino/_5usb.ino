@@ -1,12 +1,11 @@
-#define VREF 3.3*68/(2000+68) //外部参考电压
-#define IC1 A7 //Vref R0=0.1 1号电池充电电流
+#define IC1 A7 //Vref R0=0.1 1号电池充电电流 内置基准电压1.1V 采样电阻1/3欧姆  满量程3.3A分辨率3.222656ma
 #define IC2 A0 //Vref R0=0.1 2号电池充电电流
 #define IC3 A1 //Vref R0=0.1 3号电池充电电流
 #define IC4 A2 //Vref R0=0.1 4号电池充电电流
 #define IC5 A3 //Vref R0=0.1 5号电池充电电流
 #define IF1 A5 //Vref R0=0.1 1号电池放电电流
-#define VCC A4 //Vref=1.1  V5=1.1*VCC/1024/22.9*(22.9+499); //外接电源电压
-#define V1 A6  //Vref=1.1 1.1*V1/1024/97*(97+499)  //1号电池电压
+#define VCC A4 //Vref=1.1  V5=1.1*VCC/1024/22*(22+499); //外接电源电压
+#define V1 A6  //Vref=1.1 1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
 #include<stdlib.h>
 
 #include <LiquidCrystal.h>   //LCD1602a 驱动
@@ -50,29 +49,26 @@ digitalWrite(2,LOW);   //pin2 拉低
 
 float getval(int VIN)   //读取电流电压值  电流为ma ，电压为V
 {
-  __volatile__ uint16_t i;  //不做GCC优化，否则第一次AD会被优化掉
+  uint16_t i;  
   float val;
   switch(VIN) {
   case VCC:
-    analogReference(INTERNAL); //3.3V
-    val=1.1*(22.9+499)/22.9/1024;  //外接分压电阻
+    val=1.1*(22+499)/22/1024;  
     break;
   case V1:
-    analogReference(INTERNAL); //3.3V
-    val=1.1*(97+499)/97/1024;                       
+    val=1.1*(97.6+499)/97.6/1024;                       
     break;
   default:
-    analogReference(EXTERNAL);  //3.3V*68/(2000+68)
-    val=1000*VREF/1024/0.1;    //1000->换算成ma，VREF->外接基准, 1024->10位AD, 0.1->0.1欧姆取样电阻
+    val=1.1*3*1000/1024;    //1000->换算成ma, 1024->10位AD, 0.33333333->取样电阻
   }
-  i=analogRead(VIN); //第一次转换是无效数值
   i=analogRead(VIN);
-  val=val*i;
-  return(val);
+  return(val*i);
 }
 void setup()
 {
-  sdInit();
+analogReference(INTERNAL); //1.1V 基准
+analogRead(A0);
+sdInit();
 lcd.begin(16, 2);
 lcd.print("hello, Cfido!");
 }
