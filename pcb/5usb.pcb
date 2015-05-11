@@ -843,7 +843,7 @@ Via[3020.00mil 1110.00mil 36.00mil 40.00mil 0.0000 30.00mil "" "thermal(5X)"]
 Via[970.00mil 1970.00mil 36.00mil 40.00mil 0.0000 30.00mil "" "thermal(0X)"]
 Via[820.00mil 1970.00mil 36.00mil 40.00mil 0.0000 30.00mil "" "thermal(0X)"]
 
-Element["" "0805" "R18" "22.6k 1%" 1900.00mil 860.00mil 2.0309mm -0.6681mm 0 100 ""]
+Element["" "0805" "R18" "22k" 1900.00mil 860.00mil 2.0309mm -0.6681mm 0 100 ""]
 (
 	Attribute("device" "RESISTOR")
 	Attribute("manufacturer" "unknown")
@@ -1251,7 +1251,7 @@ Element["" "SOT26" "U4" "TP4057" 70.4483mm 32.7551mm 1.2305mm -2.0211mm 0 100 ""
 
 	)
 
-Element["" "0805" "R20" "681/1%" 1700.00mil 1100.00mil 1.9573mm -57.62mil 0 100 ""]
+Element["" "0805" "R20" "68.1" 1700.00mil 1100.00mil 1.9573mm -57.62mil 0 100 ""]
 (
 	Attribute("device" "RESISTOR")
 	Attribute("manufacturer" "unknown")
@@ -1265,7 +1265,7 @@ Element["" "0805" "R20" "681/1%" 1700.00mil 1100.00mil 1.9573mm -57.62mil 0 100 
 
 	)
 
-Element["" "0805" "R19" "681/1%" 1700.00mil 1020.00mil -1.1299mm -2.2983mm 0 100 ""]
+Element["" "0805" "R19" "681" 1700.00mil 1020.00mil -1.1299mm -2.2983mm 0 100 ""]
 (
 	Attribute("device" "RESISTOR")
 	Attribute("manufacturer" "unknown")
@@ -3094,7 +3094,7 @@ Layer(1 "top")
 	Line[30.5374mm 31.8074mm 30.5374mm 35.2486mm 20.00mil 40.00mil "clearline"]
 	Line[30.5374mm 35.2486mm 1160.00mil 1430.00mil 20.00mil 40.00mil "clearline"]
 	Line[1160.00mil 1430.00mil 1160.00mil 1500.00mil 20.00mil 40.00mil "clearline"]
-	Polygon("clearpoly")
+	Polygon("clearpoly,selected")
 	(
 		[0.0000 0.0000] [3940.00mil 0.0000] [3940.00mil 4530.00mil] [0.0000 4530.00mil] 
 	)

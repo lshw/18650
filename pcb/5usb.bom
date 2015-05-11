@@ -1,17 +1,18 @@
 # PcbBOM Version 1.0
-# Date: 2015年05月11日 星期一 16时56分51秒 UTC
+# Date: 2015年05月11日 星期一 17时14分03秒 UTC
 # Author: 
 # Title: (unknown) - PCB BOM
 # Quantity, Description, Value, RefDes
 # --------------------------------------------
-1,"0805","22.6k 1%",R18 
+1,"0805","22k",R18 
 1,"0805","10K",R7 
 8,"3216a","10uf",C7 C4 C3 C5 C1 C6 C11 C14 
 18,"0805","1",R5 R14 R23 R6 R10 R16 R51 R52 R232 R162 R161 R101 R102 R61 R231 R142 R141 R62 
 5,"0805","1K",R11 R17 R1 R8 R12 
 5,"0805","1.62k",R13 R22 R9 R15 R4 
 5,"SOT26","TP4057",U6 U5 U3 U4 U2 
-2,"0805","681/1%",R20 R19 
+1,"0805","68.1",R20 
+1,"0805","681",R19 
 5,"LED2x","led2x",LED3 LED1 LED4 LED2 LED5 
 5,"(unknown)","(unknown)",(unknown) (unknown) (unknown) (unknown) (unknown) 
 5,"18650","unknown",BAT5 BAT2 BAT4 BAT3 BAT1 
