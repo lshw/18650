@@ -1,5 +1,5 @@
 # PcbBOM Version 1.0
-# Date: 2015年05月11日 星期一 17时14分03秒 UTC
+# Date: 2015年05月12日 星期二 04时18分42秒 UTC
 # Author: 
 # Title: (unknown) - PCB BOM
 # Quantity, Description, Value, RefDes
@@ -7,7 +7,7 @@
 1,"0805","22k",R18 
 1,"0805","10K",R7 
 8,"3216a","10uf",C7 C4 C3 C5 C1 C6 C11 C14 
-18,"0805","1",R5 R14 R23 R6 R10 R16 R51 R52 R232 R162 R161 R101 R102 R61 R231 R142 R141 R62 
+18,"0805","1",R5 R14 R23 R6 R10 R16 R51 R52 R232 R162 R161 R101 R61 R231 R142 R141 R62 R102 
 5,"0805","1K",R11 R17 R1 R8 R12 
 5,"0805","1.62k",R13 R22 R9 R15 R4 
 5,"SOT26","TP4057",U6 U5 U3 U4 U2 
@@ -17,7 +17,6 @@
 5,"(unknown)","(unknown)",(unknown) (unknown) (unknown) (unknown) (unknown) 
 5,"18650","unknown",BAT5 BAT2 BAT4 BAT3 BAT1 
 1,"TQFP32_7","atmega168",U1 
-1,"microsd","sdcard",CONN8 
 1,"SOT223","1117",U7 
 1,"SOT23","unknown",Q1 
 2,"CAPC4564M","33",R2 R3 
@@ -34,5 +33,6 @@
 1,"SOT23","8050",Q2 
 1,"0805","499k",R26 
 1,"0805","97.6k",R27 
-2,"0805","100k",R28 R29 
+3,"0805","100k",R28 R29 R30 
 1,"1602a","LCD1602 Blue",LCD1 
+1,"tf","tf",CONN8 
