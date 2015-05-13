@@ -1,9 +1,9 @@
 项目的起因，手里有一堆的18650的电池， 需要管理。就设计了一个充电器。功能很简单，就是用线性充电集成电路,用5C的速度给5块18650充电。   
 目前完成度52%   
 
-有朋友说需要测试电池容量，于是就给一号充电位置，增加了放电功能和电压检测功能，还增加了2500V隔离串口，sdcard报告导出,lcd显示功能,后续还会增加功能在线电池管理功能， 方便大家对手头的电池进行编号，对型号，历史数据进行管理。
+有朋友说需要测试电池容量，于是就给一号充电位置，增加了放电功能和电压检测功能，还增加了2500V隔离串口，sdcard报告导出,lcd显示功能,后续还会增加在线电池管理功能， 方便大家对手头的电池进行编号，对型号，历史数据进行管理。  
 
-初步的设想是，用静态的一堆css,html5,javascript进行图文并茂的报告输出， 动态数据是同目录下的csv文件。   
+sd卡报告功能的初步设想是用静态的一堆css,html5,javascript进行图文曲线输出， 动态数据是同目录下的csv文件。   
 
 串口部分可以用python做跨平台的控制和显示界面。   
 
@@ -17,8 +17,8 @@ arduino目录下是充电器的控制程序。
 
 软件开发环境 arduino  
 
-![Image](https://github.com/lshw/18650/pcb/5usb2a.pcb)
-![Image](https://github.com/lshw/18650/pcb/5usb2.pcb)
+![Image](https://github.com/lshw/18650/raw/master/pcb/5usb2a.png)
+![Image](https://github.com/lshw/18650/raw/master/pcb/5usb2.png)
 
 
 **ToDo**  
