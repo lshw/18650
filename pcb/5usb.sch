@@ -328,7 +328,7 @@ refdes=U1
 T 48500 51700 5 10 0 0 0 0 1
 device=ATmega8
 T 49900 47800 5 10 1 1 0 0 1
-value=atmega168
+value=atmega328
 }
 C 54500 45100 1 0 0 EMBEDDEDgnd-1.sym
 [
@@ -632,7 +632,7 @@ refdes=R16
 T 60300 51300 5 10 0 0 0 0 1
 footprint=0805
 T 61200 51500 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 61500 51300 1 90 0 EMBEDDEDgnd-1.sym
 [
@@ -953,7 +953,7 @@ refdes=R10
 T 55300 51600 5 10 0 0 0 0 1
 footprint=0805
 T 56100 51800 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 56500 51800 1 90 1 EMBEDDEDgnd-1.sym
 [
@@ -1273,7 +1273,7 @@ refdes=R62
 T 47700 52200 5 10 0 0 0 0 1
 footprint=0805
 T 47700 52100 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 48900 51600 1 90 0 EMBEDDEDgnd-1.sym
 [
@@ -1594,7 +1594,7 @@ refdes=R231
 T 59000 48400 5 10 0 0 0 0 1
 footprint=0805
 T 59800 48700 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 60200 48400 1 90 0 EMBEDDEDgnd-1.sym
 [
@@ -1914,7 +1914,7 @@ refdes=R14
 T 55900 48300 5 10 0 0 0 0 1
 footprint=0805
 T 55900 48200 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 57100 48300 1 90 0 EMBEDDEDgnd-1.sym
 [
@@ -2078,6 +2078,8 @@ T 45400 53200 5 10 1 1 180 6 1
 refdes=Q1
 T 45200 53200 5 10 0 1 180 6 1
 footprint=SOT23
+T 45200 53200 5 10 1 1 0 0 1
+value=2405
 }
 C 45900 51500 1 90 0 EMBEDDEDresistor-2.sym
 [
@@ -2185,7 +2187,7 @@ refdes=R5
 T 45700 50400 5 10 0 0 180 2 1
 footprint=0805
 T 45900 50400 5 10 1 1 270 6 1
-value=1
+value=1.1
 }
 C 55400 45400 1 0 1 EMBEDDEDlm1117.sym
 [
@@ -2234,7 +2236,7 @@ device=1117
 T 54600 46000 5 10 1 1 0 0 1
 refdes=U7
 T 55400 45400 5 10 0 0 0 0 1
-footprint=SOT223
+footprint=1117
 T 55200 45700 5 10 0 1 0 0 1
 value=1117
 }
@@ -3651,7 +3653,7 @@ refdes=R7
 T 54300 47400 5 10 0 0 90 0 1
 footprint=0805
 T 54400 47200 5 10 1 1 90 0 1
-value=10K
+value=10k
 }
 N 51600 48200 52200 48200 4
 N 52200 48200 52200 47300 4
@@ -3899,8 +3901,8 @@ T 57900 47400 5 10 1 1 90 0 1
 refdes=R21
 T 57900 47000 5 10 0 1 0 0 1
 footprint=0805
-T 57900 47200 5 10 1 1 0 0 1
-value=499K 1%
+T 57900 47300 5 10 1 1 0 0 1
+value=499k
 }
 C 57900 46100 1 90 0 EMBEDDEDresistor-2.sym
 [
@@ -3940,7 +3942,7 @@ refdes=R18
 T 57900 46100 5 10 0 1 0 0 1
 footprint=0805
 T 57900 46300 5 10 1 1 0 0 1
-value=22k
+value=24k
 }
 N 57000 47700 57000 47000 4
 N 57000 47000 57800 47000 4
@@ -4368,7 +4370,7 @@ footprint=0805
 T 43700 55300 5 10 1 1 90 0 1
 refdes=C2
 T 44000 54800 5 10 1 1 0 0 1
-value=0.1u
+value=0.1uf
 }
 C 43800 54400 1 0 0 EMBEDDEDgnd-1.sym
 [
@@ -4438,7 +4440,7 @@ footprint=0805
 T 41300 55200 5 10 1 1 90 0 1
 refdes=C12
 T 41000 54900 5 10 1 1 0 0 1
-value=0.1u
+value=0.1uf
 }
 C 42400 54700 1 90 0 EMBEDDEDcapacitor-1.sym
 [
@@ -4489,7 +4491,7 @@ footprint=0805
 T 42100 55200 5 10 1 1 90 0 1
 refdes=C10
 T 42300 54900 5 10 1 1 0 0 1
-value=10u
+value=10uf
 }
 N 41400 54700 42800 54700 4
 N 41400 55600 43900 55600 4
@@ -4832,7 +4834,7 @@ footprint=0805
 T 43000 55300 5 10 1 1 90 0 1
 refdes=C13
 T 42900 54900 5 10 1 1 0 0 1
-value=0.1u
+value=0.1uf
 }
 C 44300 44500 1 0 0 EMBEDDEDvcc-1.sym
 [
@@ -4987,7 +4989,7 @@ refdes=LCD1
 T 40800 44200 5 10 1 1 0 0 1
 value=LCD1602 Blue
 T 39800 43800 5 10 0 0 0 0 1
-footprint=1602a
+footprint=1602as
 }
 C 43400 49100 1 0 0 EMBEDDEDgnd-1.sym
 [
@@ -5353,7 +5355,7 @@ refdes=R61
 T 47700 51900 5 10 0 0 0 0 1
 footprint=0805
 T 47700 51800 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 47700 51600 1 0 0 EMBEDDEDresistor-2.sym
 [
@@ -5393,7 +5395,7 @@ refdes=R6
 T 47700 51600 5 10 0 0 0 0 1
 footprint=0805
 T 47700 51500 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 55300 51900 1 0 0 EMBEDDEDresistor-2.sym
 [
@@ -5433,7 +5435,7 @@ refdes=R102
 T 55300 51900 5 10 0 0 0 0 1
 footprint=0805
 T 56100 52100 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 55300 52200 1 0 0 EMBEDDEDresistor-2.sym
 [
@@ -5473,7 +5475,7 @@ refdes=R101
 T 55300 52200 5 10 0 0 0 0 1
 footprint=0805
 T 56100 52400 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 N 56200 52300 56200 51700 4
 N 55300 52300 55300 51700 4
@@ -5515,7 +5517,7 @@ refdes=R161
 T 60300 51600 5 10 0 0 0 0 1
 footprint=0805
 T 61200 51700 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 60300 51900 1 0 0 EMBEDDEDresistor-2.sym
 [
@@ -5555,7 +5557,7 @@ refdes=R162
 T 60300 51900 5 10 0 0 0 0 1
 footprint=0805
 T 61100 52100 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 N 60300 52000 60300 51400 4
 N 61200 52000 61200 51400 4
@@ -5597,7 +5599,7 @@ refdes=R23
 T 59000 47800 5 10 0 0 0 0 1
 footprint=0805
 T 59800 48100 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 59000 48100 1 0 0 EMBEDDEDresistor-2.sym
 [
@@ -5637,7 +5639,7 @@ refdes=R232
 T 59000 48100 5 10 0 0 0 0 1
 footprint=0805
 T 59800 48400 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 N 59900 48500 59900 47900 4
 N 59000 48500 59000 47900 4
@@ -5679,7 +5681,7 @@ refdes=R141
 T 55900 48600 5 10 0 0 0 0 1
 footprint=0805
 T 55700 48700 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 C 55900 48900 1 0 0 EMBEDDEDresistor-2.sym
 [
@@ -5719,7 +5721,7 @@ refdes=R142
 T 55900 48900 5 10 0 0 0 0 1
 footprint=0805
 T 55900 49100 5 10 1 1 0 0 1
-value=1
+value=1.1
 }
 N 55900 49000 55900 48400 4
 N 56800 49000 56800 48400 4
@@ -5761,7 +5763,7 @@ refdes=R52
 T 46000 50400 5 10 0 0 180 2 1
 footprint=0805
 T 46200 50400 5 10 1 1 270 6 1
-value=1
+value=1.1
 }
 C 46300 50400 1 270 1 EMBEDDEDresistor-2.sym
 [
@@ -5801,7 +5803,7 @@ refdes=R51
 T 46300 50400 5 10 0 0 180 2 1
 footprint=0805
 T 46500 50400 5 10 1 1 270 6 1
-value=1
+value=1.1
 }
 N 46400 50400 45800 50400 4
 N 45800 51300 45800 51500 4

@@ -1,10 +1,10 @@
-#define IC1 A7 //Vref R0=0.1 1号电池充电电流 内置基准电压1.1V 采样电阻1/3欧姆  满量程3.3A分辨率3.222656ma
+#define IC1 A7 //Vref R0=0.1 1号电池充电电流 内置基准电压1.1V 采样电阻1.1/3欧姆  满量程3.3A分辨率3.222656ma
 #define IC2 A0 //Vref R0=0.1 2号电池充电电流
 #define IC3 A1 //Vref R0=0.1 3号电池充电电流
 #define IC4 A2 //Vref R0=0.1 4号电池充电电流
 #define IC5 A3 //Vref R0=0.1 5号电池充电电流
 #define IF1 A5 //Vref R0=0.1 1号电池放电电流
-#define VCC A4 //Vref=1.1  V5=1.1*VCC/1024/22*(22+499); //外接电源电压
+#define VCC A4 //Vref=1.1  V5=1.1*VCC/1024/24*(24+499); //外接电源电压
 #define V1 A6  //Vref=1.1 1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
 #include<stdlib.h>
 
@@ -30,7 +30,7 @@ void charge()
 pinMode(9,INPUT);
 digitalWrite(9,LOW); //pin9 高阻
 pinMode(2,OUTPUT);   
-digitalWrite(2,LOw);  //pin2 拉低
+digitalWrite(2,LOW);  //pin2 拉低
 }
 void Discharge()
 { //电池1放电
@@ -53,13 +53,13 @@ float getval(int VIN)   //读取电流电压值  电流为ma ，电压为V
   float val;
   switch(VIN) {
   case VCC:
-    val=1.1*(22+499)/22/1024;  
+    val=1.1*(24+499)/24/1024;  
     break;
   case V1:
     val=1.1*(97.6+499)/97.6/1024;                       
     break;
   default:
-    val=1.1*3*1000/1024;    //1000->换算成ma, 1024->10位AD, 0.33333333->取样电阻
+    val=1.1/(1.1/3)*1000/1024;    //1000->换算成ma, 1024->10位AD, 1.1/3->取样电阻
   }
   i=analogRead(VIN);
   return(val*i);
