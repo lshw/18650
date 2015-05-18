@@ -22,8 +22,10 @@ arduino目录下是充电器的控制程序。
 
 
 **ToDo**  
- .优化程序大小， 争取可以放进atmega168  16k，重点是sd/fat部分  
-
+ .完成样板制作,联调  
+ .用arduino完成firmware  
+ .html5/css/js程序  
+ .python程序  
 
 **Changelog**  
  2015-05-16

@@ -1,0 +1,35 @@
+# PcbBOM Version 1.0
+# Date: 2015年05月18日 星期一 16时31分55秒 UTC
+# Author: 
+# Title: (unknown) - PCB BOM
+# Quantity, Description, Value, RefDes
+# --------------------------------------------
+1,"tf","tf",CONN8 
+18,"0805","1.1",R52 R51 R5 R231 R232 R23 R16 R162 R161 R141 R142 R14 R101 R102 R10 R62 R61 R6 
+1,"SWITCH","unknown",S1 
+3,"0805","100k",R30 R29 R28 
+1,"SOT23","8050",Q2 
+3,"0805","0.1uf",C13 C12 C2 
+3,"0805","10k",R24 R25 R7 
+2,"CAPC4564M","33",R3 R2 
+1,"SOT23","2405",Q1 
+4,"(unknown)","(unknown)",(unknown) (unknown) (unknown) (unknown) 
+5,"18650","unknown",BAT2 BAT5 BAT3 BAT4 BAT1 
+5,"SOT26","TP4057",U2 U4 U3 U5 U6 
+5,"LED2x","led2x",LED5 LED2 LED4 LED1 LED3 
+1,"TQFP32_7","atmega328",U1 
+5,"0805","1K",R12 R8 R1 R17 R11 
+5,"0805","1.62k",R4 R15 R9 R22 R13 
+1,"0805","97.6k",R27 
+2,"0805","499k",R26 R21 
+1,"SO8","ADuM1201",U8 
+1,"usbttl","unknown",CONN6 
+1,"CRYSTAL 300","16Mhz",X1 
+2,"0805","15P",C9 C8 
+8,"0805","10uf",C11 C6 C7 C4 C3 C5 C1 C10 
+1,"0805","24k",R18 
+1,"smt0805","0805 Chip site",(unknown) 
+1,"power1","unknown",CONN1 
+1,"microusb","unknown",CONN7 
+1,"1117","1117",U7 
+1,"1602as","LCD1602 Blue",LCD1 
