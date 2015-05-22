@@ -17,17 +17,20 @@ arduino目录下是充电器的控制程序。
 
 软件开发环境 arduino  
 
-![Image](https://github.com/lshw/18650/raw/master/pcb/5usb2a.png)
-![Image](https://github.com/lshw/18650/raw/master/pcb/5usb2.png)
+![Image](https://github.com/lshw/18650/raw/master/pcb/5usb4a.png)
+![Image](https://github.com/lshw/18650/raw/master/pcb/5usb4.png)
 
 
 **ToDo**  
- .完成样板制作,联调  
  .用arduino完成firmware  
  .html5/css/js程序  
  .python程序  
 
 **Changelog**  
+ 2015-05-21  
+ .使用现成的电池座，重画电路板，反面3个电池，正面2个电池。  
+ 2015-05-19
+ .完成样板制作,联调,发现TF座接线错误，飞线修复    
  2015-05-16
  .接到顺丰速递通知，线路板已经从东莞发来.  
  2015-05-13  
