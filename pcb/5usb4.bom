@@ -1,0 +1,38 @@
+# PcbBOM Version 1.0
+# Date: 2015年05月28日 星期四 08时44分11秒 UTC
+# Author: 
+# Title: 1 - PCB BOM
+# Quantity, Description, Value, RefDes
+# --------------------------------------------
+4,"(unknown)","(unknown)",(unknown) (unknown) (unknown) (unknown) 
+1,"tf","tf",CONN8 
+2,"0805","499k",R26 R21 
+1,"0805","97.6k",R27 
+8,"0805","10uf",C7 C4 C1 C11 C10 C6 C3 C5 
+5,"0805","1K",R11 R17 R1 R12 R8 
+5,"0805","1.62k",R13 R22 R4 R15 R9 
+5,"SOT26","TP4057",U6 U5 U2 U4 U3 
+5,"LED2x","led2x",LED1 LED5 LED4 LED3 LED2 
+5,"18650a","unknown",B3 B1 B4 B5 B2 
+3,"SWITCH","unknown",S3 S2 S1 
+5,"0805","10k",R20 R7 R3 R24 R25 
+1,"microusb","unknown",CONN7 
+1,"power1","unknown",CONN1 
+4,"0805","100k",R29 R19 R28 R30 
+3,"0805","0.1uf",C13 C2 C12 
+1,"1117","1117",U7 
+2,"0805","15P",C8 C9 
+1,"CRYSTAL 300","16Mhz",X1 
+1,"0805","24.3k",R18 
+3,"SOT23","8050",Q3 Q2 Q4 
+1,"SOT23","2405",Q1 
+1,"0805","red",LED6 
+6,"1206","0.33",R23 R10 R14 R16 R6 R5 
+7,"3216a","ss14",D3 D7 D2 D1 D6 D5 D4 
+1,"TQFP32_7","atmega328",U1 
+1,"SO16W","DS3231",U9 
+1,"usbttl","unknown",CONN6 
+1,"SO8","ADuM1201",U8 
+1,"CAPC4564M","33",R2 
+1,"1602a","LCD1602 Blue",LCD1 
+1,"cap","0.047F",C14 

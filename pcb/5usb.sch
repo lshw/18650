@@ -1854,7 +1854,7 @@ refdes=U7
 T 58400 42400 5 10 0 0 0 0 1
 footprint=1117
 T 58200 42700 5 10 0 1 0 0 1
-value=1117
+value=1117/HT7233SOT89
 }
 C 50300 52400 1 0 0 EMBEDDED5V-plus-1.sym
 [
@@ -3378,7 +3378,7 @@ refdes=R18
 T 57900 46100 5 10 0 1 0 0 1
 footprint=0805
 T 57900 46300 5 10 1 1 0 0 1
-value=24k
+value=24.3k
 }
 N 57000 47700 57000 47000 4
 N 57000 47000 57800 47000 4
@@ -5789,7 +5789,7 @@ refdes=C14
 T 51100 44000 5 10 0 0 90 6 1
 symversion=0.1
 T 52000 44200 5 10 0 0 0 0 1
-footprint=ACY500P
+footprint=cap
 T 52000 43700 5 10 1 1 0 0 1
 value=0.047F
 }
