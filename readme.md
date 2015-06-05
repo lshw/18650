@@ -19,6 +19,7 @@ arduino目录下是充电器的控制程序。
 
 ![Image](https://github.com/lshw/18650/raw/master/pcb/5usb4a.png)
 ![Image](https://github.com/lshw/18650/raw/master/pcb/5usb4.png)
+![Image](https://github.com/lshw/18650/raw/master/docs/5x18650.jpg)
 
 
 **ToDo**  
