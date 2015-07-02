@@ -42,13 +42,13 @@ translate([90.2,37+1,0]) cylinder(h=4,r=4);//led4 !001
 translate([90.2,77.5+0.5,0]) cylinder(h=4,r=4);//led5 !001
 
 translate([11.9,100-76,0])  {
-cylinder(h=4,r=1.5);//B2
-translate([73,0,0]) cylinder(h=4,r=1.5);//B2
+cylinder(h=4,r=2);//B2
+translate([73,0,0]) cylinder(h=4,r=2);//B2
 }
 
 translate([11.9,100-10.6,0])  {
-cylinder(h=4,r=1.5);//B1
-translate([73,0,0]) cylinder(h=4,r=1.5);//B1
+cylinder(h=4,r=2);//B1
+translate([73,0,0]) cylinder(h=4,r=2);//B1
 }
 
 translate([90.4,100-76,0]) cylinder(h=4,r=3.5);//led2
