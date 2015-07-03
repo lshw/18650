@@ -14,11 +14,11 @@ translate([bh,bh,0]) {
 
 translate([2.54,2.54,0]) {
  cylinder(h=ha,r=1.5);
-translate([95,0,0]) 
+translate([94.5,0,0]) 
  cylinder(h=ha,r=1.5);
-translate([0,95,0]) 
+translate([0,94.5,0]) 
  cylinder(h=ha,r=1.5);
-translate([95,95,0]) 
+translate([94.5,94.5,0]) 
  cylinder(h=ha,r=1.5);
 }
 translate([13,13,0]) cube([78,21.3,ha]); //B2
