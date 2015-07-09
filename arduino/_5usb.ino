@@ -1,3 +1,4 @@
+#define VER "1.0"
 #define IC1 A4 //Vref R0=0.1 1号电池充电电流 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
 #define IC2 A1 //Vref R0=0.1 2号电池充电电流
 #define IC3 A0 //Vref R0=0.1 3号电池充电电流
@@ -6,29 +7,36 @@
 #define IF1 A3 //Vref R0=0.1 1号电池放电电流
 #define VCC A2 //Vref=1.1  1.1*VCC/1024/24.3*(24.3+499); //外接电源电压
 #define V1 A6  //Vref=1.1  1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
-
+uint16_t ic3,ic2,vcc,if1,ic1,ic5,v1,v1d,ic4,r;
 #include<stdlib.h>
 #include <LiquidCrystal.h>   //LCD1602a 驱动
 LiquidCrystal lcd(8, 7, 6, 5, 4, 3); //(RS,EN,D4,D5,D6,D7)
 
 #include <Wire.h>
+#define CONFIG_UNIXTIME 1
 #include "ds3231.h"
-
 #include <SD.h>  //sdcard 和vfat的库
 
-
-#define CHARGE 0  //充电状态
-#define TOFULL 1 //第一步先充满
-#define FULLTOZERO 2 //第二步放到空，测容量
-#define ZEROTOFULL 3   //第三步充到满，测充电电量
-uint8_t proc __attribute__ ((section (".noinit")));      //状态
-uint8_t procxor __attribute__ ((section (".noinit")));   //状态校验
-
+#define CHARGE 0
+#define TOFULL 1 //charge to full
+#define FULLTOZERO 2 //full to zero
+#define ZEROTOFULL 3  
+uint8_t proc __attribute__ ((section (".noinit")));
+uint32_t b1,b2,b3,b4,b5,bf1,bv1 __attribute__ ((section (".noinit")));
+uint32_t procxor __attribute__ ((section (".noinit"))); 
+uint32_t check() {
+  return (b1+proc) ^ b2 ^ b3 ^ b4 ^ b5 ^ bf1 ^ bv1;
+}
+void calc_check() 
+{
+  procxor=check();
+}
 void setproc(uint8_t dat)
 {  //存储的校验， 因为proc重启不会清零， 所以要根据校验进行初始化。
   proc=dat;
-  procxor=dat^'L';
+  calc_check();
 }
+
 
 void sdSave(String dataString) {
   pinMode(10,OUTPUT); //10脚是cs
@@ -84,58 +92,89 @@ uint8_t getkey()
   digitalWrite(10,sso);
   digitalWrite(12,miso);
   digitalWrite(13,scko);
-  lcd.setCursor(3, 0); //设置光标到第一行第14个字符位置
-  if(ret&1) lcd.print('v');
-  else lcd.print('V');
-  lcd.setCursor(9, 0); //设置光标到第一行第14个字符位置
-  if(ret&2) lcd.print('v');
-  else lcd.print('V');
+  if(millis()<4000) return ret;
+  lcd.setCursor(1, 0); //设置光标到第一行第14个字符位置
+  if(ret&1) lcd.print('*');
+  else lcd.print('.');
+  lcd.setCursor(5, 0); //设置光标到第一行第14个字符位置
+  if(ret&2) lcd.print('*');
+  else lcd.print('.');
   return ret;
 }
-uint16_t getval(int VIN)   //读取电流电压值  电流为ma ，电压为mV数/10
+
+void ad()
 {
-  uint32_t val; //每个数字都乘以100倍,是为了保留足够的小数位数
-  boolean i11,A5V;
-  i11=digitalRead(11); 
+  uint16_t sv1d,svcc,sif1,sic1,sic2,sic3,sic4,sic5,sv1; 
+  const uint16_t ivcc=1.1*1000*10*(24.3+499)/24.3/1024; //2313.3278   0.1mv
+  const uint16_t iv1=1.1*1000*10*(97.6+499)/97.6/1024; //65.6638 0.1mv
+  const uint16_t ii=1.1*1000*10/(0.33)/1024;//3.255 ma   0.1ma
+  float val;
+  boolean A5V;
   A5V=digitalRead(A5);
-  pinMode(VIN,INPUT);
-  digitalWrite(VIN,LOW);
-  delay(1);  //这个要测试一下，是否可以缩短。
-  if(VIN==A4) {
-    digitalWrite(11,LOW);  
-    delay(1);
-  }
-  switch(VIN) {
-  case VCC: //因为选的都是0.1%精度的电阻，所以不需要校准，就可以根据计算保证精度 
-    val=1.1*1000*100*(24.3+499)/24.3/1024;  
-    break;
-  case V1:   //10mv
-    val=1.1*1000*100*(97.6+499)/97.6/1024;                       
-    break;
-  default:  //ma
-    val=1.1*1000*100/(0.33)/1024;    //1000->换算成ma, 1024->10位AD, 0.33->取样电阻
-  }
-  val=val*analogRead(VIN)/100;
+  pinMode(A5,INPUT);
+  digitalWrite(A5,LOW);  
+  digitalWrite(A4,LOW);
+  digitalWrite(11,LOW);  
+  delay(1);
+  sif1=analogRead(IF1);
+  sv1=analogRead(V1);
+  sic1=analogRead(IC1);  
+  disable();
+  delay(1); //!
+  sic2=analogRead(IC2);
+  sic3=analogRead(IC3);
+  sic4=analogRead(IC4);
+  sic5=analogRead(IC5);
+  svcc=analogRead(VCC);
+  sv1d=analogRead(V1);
   digitalWrite(11,HIGH);
-  if(VIN==VCC || VIN==V1) val=val/10;
   pinMode(A5,OUTPUT);
   if(digitalRead(A5)!=A5V) digitalWrite(A5,A5V);
-  return(val); 
+  oneset();
+  val=231.33278*svcc;
+  vcc=val;  //mv
+  val=6.56638*sv1;
+  v1=val;  //mv
+  val=6.56638*sv1d;
+  v1d=val; //mv
+  val=3.255*sif1;
+  if1=val; //ma
+  val=3.255*sic1;
+  ic1=val;  //ma
+  val=3.255*sic2;
+  ic2=val;  //ma
+  val=3.255*sic3;
+  ic3=val; //ma
+  val=3.255*sic4;
+  ic4=val; //ma
+  val=3.255*sic5;
+  ic5=val;
+float x=0;
+  if(proc==FULLTOZERO && if1>50) { //放电
+   if(sv1<sv1d) {
+     x=6.56638*(sv1d-sv1)/sif1/3.255-0.33;
+ r=x*1000;  
+ }  
+} else if(ic1>50) {
+    if(v1d<v1) {
+      x=6.56638*(sv1-sv1d)/sic1/3.255-0.33;
+  r=x*1000;  
+  }
+    }
+    Serial.print("sv1=");
+    Serial.print(sv1);
+    Serial.print(",sv1d=");
+    Serial.print(sv1d);
+    
+    Serial.print(",sif1=");
+    Serial.print(sif1);
+
+    Serial.print(",sic1=");
+    Serial.print(sic1);
+    Serial.print(",r=");
+    Serial.println(r);
 }
-String getma(uint16_t a) 
-{  //毫安数是3位的， 前面要补0,
-  String c;
-  if(a>999) a=999; //最大999ma
-  if(a<10) c="0";  //补2个0
-  if(a<100) c+="0"; //补1个0
-  return c+String(a);
-}
-String getmv(uint16_t v)
-{  //电压最多取2位小数，前面补0
-  v=v%100;
-  if(v<10) return "0"+String(v);
-  else return String(v);
-}
+
 void oneset()
 {
   switch(proc) {
@@ -153,12 +192,45 @@ boolean i=false;
 void setup()
 {
   struct ts t;
-  String hello="Hello,Cfido!";
+  uint8_t upchar[8] = {
+  0b00100,
+  0b01110,
+  0b10101,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100
+},
+downchar[8] = {
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b00100,
+  0b10101,
+  0b01110,
+  0b00100
+},
+wdchar[8] = {
+  0b10000,
+  0b00000,
+  0b01110,
+  0b10001,
+  0b10000,
+  0b10000,
+  0b10001,
+  0b01110
+};
+  String hello="Hello,Cfido!V" VER;
   Serial.begin(9600); //串口9600
   Serial.println(hello);
   analogReference(INTERNAL); //使用atmega328的内部1.1V 基准源
   analogRead(A0); //第一次转换不准确， 要用掉
   lcd.begin(16, 2); //lcd初始化  16字符2行
+  lcd.createChar(2, upchar);  
+  lcd.createChar(1, downchar);
+  lcd.createChar(3, wdchar);  
   lcd.clear();
   lcd.print(hello); 
   pinMode(11,OUTPUT);
@@ -173,14 +245,36 @@ void setup()
     delay(100); 
     digitalWrite(11,!digitalRead(11)); //lcd背光煽动10次
   }
-  if(proc^'L'!=procxor) setproc(CHARGE);  //proc校验不过，就初始化。
+  if(check()!=procxor) {
+    proc=CHARGE;
+    b1=0;
+    b2=0;
+    b3=0;
+    b4=0;
+    b5=0;
+    bf1=0;
+    bv1=0;
+
+    calc_check();  //proc校验不过，就初始化。
+  }
   oneset();
 }
 uint32_t dida=0;
 uint8_t keya=0;
 void keydown()
-{ 
+{
+  switch(getkey()) {
+  case 1:
+    proc=FULLTOZERO;
+    calc_check();
+    break;
+  case 2:
+    proc=CHARGE;
+    calc_check();
+  } 
 }
+char dispbuff[18];
+float wd;
 void disptime()
 {
   struct ts t;
@@ -189,54 +283,54 @@ void disptime()
   pinMode(11,OUTPUT);
   digitalWrite(11,HIGH);
   Wire.begin();
+  wd=DS3231_get_treg();
   DS3231_get(&t);
-  snprintf(timestr, 17, "%04d-%02d-%02d %02d:%02d",t.year,
+  snprintf(dispbuff, 17, "%04d-%02d-%02d %02d:%02d",t.year,
   t.mon, t.mday, t.hour, t.min);
   lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
-  lcd.print(timestr);   //显示buff到第二行
+  lcd.print(dispbuff);   //显示buff到第二行
   return;
+}
+
+void ah_add()
+{ //10s
+  uint32_t ia;
+  //if(ib1
 }
 void loop() 
 { //循环
   String stringVal ; //显示buff
-  uint16_t va; //存放模拟量的值
   if(keya!=getkey()) {
     keydown();
     keya=getkey();
   }
   if(dida+2000>millis()) return;
   dida=millis();
-  if(proc!=ZEROTOFULL && proc !=FULLTOZERO) {
-    disable(); // 关闭1号电池的充放电，
-  }
-  va=getval(VCC); //测电源电压
-  stringVal=String(va/100)+"."+String(va%100/10);  //换算成字符串 
-  va=getval(V1); //测一号电池的电压， 关闭充放电的情况下测试
-  oneset(); //1号电池测完，测完打开到充电模式
-  stringVal +="V "+String(va/100)+"."+getmv(va%100)+"V "; //换算成字符串
-  va=getval(IF1); //放电电流
-  if(va>0) 
-    stringVal +="-"+getma(va)+" "; //如果不是0,则作为负值放入显示buff
-  va=getval(IC1); //测充电电流
-  if(va>0)
-    stringVal += getma(va)+"ma"; //放入显示buff
-  Serial.println(stringVal); //把显示buff送串口
+  ad();
+  Serial.print("wd=");
+  Serial.println(wd);
+  if(if1>10)
+  sprintf(dispbuff,"%01d.%01d %01d.%01d \x01%03d %03d",vcc/10/1000,(vcc/100)%10,v1/1000,(v1/100)%10,if1,r);
+  else if(ic1>10)
+  sprintf(dispbuff,"%01d.%01d %01d.%02d %03d %d\x03",vcc/10/1000,(vcc/100)%10,v1/1000,(v1/10)%100,ic1,(int)wd);
+  else
+  sprintf(dispbuff,"%01d.%01d %01d.%02d %d\x03    " VER,vcc/10/1000,(vcc/100)%10,v1/1000,(v1/10)%100,(int)wd);
+
+  Serial.println(dispbuff); //把显示buff送串口
   lcd.setCursor(0, 0); //设置光标到第一行第一个字符位置
-  lcd.print(stringVal+" ");  //显示字符串到第一行
+  lcd.print(dispbuff);  //显示字符串到第一行
   //开始准备第二行
   stringVal="";
   if(i) {
-    stringVal = getma(getval(IC2))+" "; //把2号电流放入buff，3位数字加一个空格 
-    stringVal+=getma(getval(IC3))+" "; //把3号电流放入buff，3位数字加一个空格
-    stringVal+=getma(getval(IC4))+" "; //把4号电流放入buff，3位数字加一个空格
-    stringVal+=getma(getval(IC5))+" "; //把5号电流放入buff，3位数字加一个空格
+    snprintf(dispbuff,17,"%03d %03d %03d %03d ",ic2,ic3,ic4,ic5);
     lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
-    lcd.print(stringVal);   //显示buff到第二行
+    lcd.print(dispbuff);   //显示buff到第二行
     i=false;
   }//第二行准备完毕
   else {
     i=true;
     disptime();
   } 
-  Serial.print(stringVal+"\r\n"); //输出到串口
+  Serial.println(dispbuff); //输出到串口
 }
+
