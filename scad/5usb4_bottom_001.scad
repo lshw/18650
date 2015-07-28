@@ -5,18 +5,23 @@ bh=2;
 
 translate([bh,bh,0])
 translate([2.54,2.54,0]) {
+cylinder(h=3.3,r=2); 
  cylinder(h=7,r=1.5);
-translate([94.5,0,0]) 
+
+translate([94.5,94.5,0]){ 
+cylinder(h=3.3,r=2); 
  cylinder(h=7,r=1.5);
-translate([0,94.5,0]) 
- cylinder(h=7,r=1.5);
-translate([94.5,94.5,0]) 
- cylinder(h=7,r=1.);
 }
+}
+
 difference(){
 cube([pcbx+bh+bh,pcby+bh+bh,3]);
 translate([bh,bh,0]) {
 
+translate([2.54,2.54,0]) {
+translate([95,0,0]) cylinder(h=7,r=2);
+translate([0,95,0]) cylinder(h=7,r=2);
+}
 
 translate([9,26.5,0]) cube([78,21.3,4]); //B3
 translate([9,67.5,0]) cube([78,21.3,4]); //B4

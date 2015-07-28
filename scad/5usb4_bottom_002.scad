@@ -2,6 +2,7 @@ $fn=20;
 pcbx=100;
 pcby=100;
 bh=2;
+
 translate([bh,bh,0])
 translate([2.54,2.54,0]) {
 cylinder(h=3.3,r=2); 
@@ -13,10 +14,10 @@ cylinder(h=3.3,r=2);
 }
 }
 
-
 difference(){
 cube([pcbx+bh+bh,pcby+bh+bh,3]);
 translate([bh,bh,0]) {
+
 translate([2.54,2.54,0]) {
 translate([95,0,0]) cylinder(h=7,r=2);
 translate([0,95,0]) cylinder(h=7,r=2);
@@ -25,24 +26,24 @@ translate([0,95,0]) cylinder(h=7,r=2);
 translate([9,26.5,0]) cube([78,21.3,4]); //B3
 translate([9,67.5,0]) cube([78,21.3,4]); //B4
 translate([9,0,0]) cube([78,21.3,4]);  //b5
-translate([9,50,0]) cube([18,16,4]);   //label
-translate([46,50,0]) cube([7,7,4*2],true);  // reset switch  y=50
-translate([55,51.5,0]) cube([32,15,4]);  //usbcom
+translate([9,50,0]) cube([14,16,4]);   //label 
+translate([46,50.5,0]) cube([7,7,4*2],true);  // reset switch  y=50 
 
-translate([90.2,10.5,0]) cylinder(h=4,r=2);//led3
-translate([90.2,37,0]) cylinder(h=4,r=2);//led4
-translate([90.2,77.5,0]) cylinder(h=4,r=2);//led5
+translate([90.2,11,0]) cylinder(h=4,r=2);//led3 
+translate([90.2,37,0]) cylinder(h=4,r=2);//led4 
+translate([90.2,78,0]) cylinder(h=4,r=2);//led5
 
-translate([66,94.5,0]) cylinder(h=4,r=6.3);//bat
+translate([66+1.5,94.5,0]) cylinder(h=4,r=6.3);//bat 
 }
 translate([bh,bh,0.3]){
 translate([41.5,88,0]) cube([12,12,4]);//U9
 }
 translate([bh,bh,1]){
 translate([1,70,0]) cube([8,23,4]); //s2 s3
-translate([90.2,10.5,0]) cylinder(h=4,r=4);//led3
-translate([90.2,37,0]) cylinder(h=4,r=4);//led4
-translate([90.2,77.5,0]) cylinder(h=4,r=4);//led5
+translate([55,51.5,0]) cube([32-2,15,4]);  //usbcom 
+translate([90.2,11,0]) cylinder(h=4,r=4);//led3
+translate([90.2,37,0]) cylinder(h=4,r=4);//led4 
+translate([90.2,78,0]) cylinder(h=4,r=4);//led5
 
 translate([11.9,100-76,0])  {
 cylinder(h=4,r=2);//B2

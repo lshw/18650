@@ -6,20 +6,29 @@ hi=3;
 ha=hi+pcbz;
 bh=2;
 fx=0.2;
+cube([1.2,60,ha]);
+
+translate([bh,bh,0])
+translate([2.54,2.54,0]) {
+cylinder(h=3.3,r=2); 
+ cylinder(h=7,r=1.5);
+
+translate([94.5,94.5,0]){ 
+cylinder(h=3.3,r=2); 
+ cylinder(h=7,r=1.5);
+}
+}
+
 difference(){
 cube([pcbx+bh+bh,pcby+bh+bh,ha]);
 translate([bh-fx,bh-fx,hi]) cube([pcbx+fx+fx,pcby+fx+fx,pcbz]);
 translate([bh,bh,0]) {
 
 translate([2.54,2.54,0]) {
- cylinder(h=ha,r=1.5);
-translate([94.5,0,0]) 
- cylinder(h=ha,r=1.5);
-translate([0,94.5,0]) 
- cylinder(h=ha,r=1.5);
-translate([94.5,94.5,0]) 
- cylinder(h=ha,r=1.5);
+translate([95,0,0]) cylinder(h=ha,r=2);
+translate([0,95,0]) cylinder(h=ha,r=2);
 }
+
 translate([13,13,0]) cube([78,21.3,ha]); //B2
 translate([13,78.5,0]) cube([78,21.3,ha]); //B1
 translate([-bh,47,0]) cube([15+bh,10,ha]); //CONN1
@@ -30,22 +39,20 @@ translate([14,71.5,0]) cylinder(h=ha,r=3.3);//lcd
 
 translate([10,24,0]) cylinder(h=ha,r=2);//led2
 translate([10,90,0]) cylinder(h=ha,r=2);//led1
-translate([44,71,0]) cube([42.5,4,ha]);//LCD1
-translate([92.6,72.5,0]) cube([7,7,ha]);  // sw1
-translate([92.6,84.5,0]) cube([7,7,ha]);  // sw2
-
-
+translate([43,71,0]) cube([43,4,ha]);//LCD1
+translate([92.5,71.5,0]) cube([7.5,8,ha]);  // sw1
+translate([92.5,83.5,0]) cube([7.5,8,ha]);  // sw2
 }
 translate([bh,bh,0.2]){
 translate([55.5,66,0]) cube([11.5,6,ha]);//x1
 translate([33,75.5,0]) cube([8,4,ha]);  // D3  //*
 translate([21.5,55.5,0]) cube([8,4,ha]);  // D2  //!
 translate([46.5,8,0]) cube([8,4,ha]);  // D4   //!
+translate([-bh,63,0]) cube([6+bh,8,ha]); //CONN7
 }
 
 translate([bh,bh,1]){
 
-translate([-bh,63,0]) cube([6+bh,8,ha]); //CONN7
 translate([10,24,0]) cylinder(h=ha,r=3.5);//led2
 translate([10,90,0]) cylinder(h=ha,r=3.5);//led1
 translate([1.5,7,0]) cube([10,9,ha]); //r11,r13,u6

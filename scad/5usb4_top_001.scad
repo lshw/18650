@@ -38,7 +38,7 @@ translate([14,41,0]) cylinder(h=ha,r=3.3);//lcd
 translate([14,71.5,0]) cylinder(h=ha,r=3.3);//lcd
 
 translate([10,24,0]) cylinder(h=ha,r=2.2);//led2
-translate([10,89,0]) cylinder(h=ha,r=2.2);//led1 
+translate([10,89,0]) cylinder(h=ha,r=2.2);//led1  
 translate([43,71,0]) cube([43,4,ha]);//LCD1
 translate([92.5,71.5,0]) cube([7.5,8,ha]);  // sw1
 translate([92.5,83.5,0]) cube([7.5,8,ha]);  // sw2
@@ -48,8 +48,8 @@ translate([92.5,83.5,0]) cube([7.5,8,ha]);  // sw2
 translate([bh,bh,0.2]){
 translate([55.5,66,0]) cube([11.5,6,ha]);//x1
 translate([33,75.5,0]) cube([8,4,ha]);  // D3  //*
-translate([21.5,55.5,0]) cube([8,4,ha]);  // D2  //!
-translate([46.5,8,0]) cube([8,4,ha]);  // D4   //!
+translate([21.5,55.5,0]) cube([8,4,ha]);  // D2  //
+translate([46.5,8,0]) cube([8,4,ha]);  // D4   //
 translate([-bh,63,0]) cube([6+bh,8,ha]); //CONN7
 }
 
@@ -95,8 +95,11 @@ translate([27,51.5,0]) cylinder(h=ha,r=5);//LDO 1117
 
 translate([94,80,0]) cube([6,3,ha]);//R20
 translate([92,67.5,0]) cylinder(h=ha,r=3);//Q3
+
 translate([87,69,0]) cylinder(h=ha,r=3);//LED6
-translate([54.5,10,0]) cylinder(h=ha,r=3);//c3
+
+translate([54.5,10,0]) cylinder(h=ha,r=4);//c3
+
 translate([81,71.5,0]) cylinder(h=ha,r=3);//C? 0.1uf
 translate([78.5,65.3,0]) cylinder(h=ha,r=5);//R19,R30
 translate([40,9,0]) cube([5,3,ha]); //C4
