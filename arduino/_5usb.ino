@@ -1,36 +1,115 @@
-#define IC1 A4 //Vref R0=0.1 1号电池充电电流 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
-#define IC2 A1 //Vref R0=0.1 2号电池充电电流
-#define IC3 A0 //Vref R0=0.1 3号电池充电电流
-#define IC4 A7 //Vref R0=0.1 4号电池充电电流
-#define IC5 A5 //Vref R0=0.1 5号电池充电电流
-#define IF1 A3 //Vref R0=0.1 1号电池放电电流
+#define VER "1.2"
+//ad管脚定义
+#if defined(__AVR_ATmega328P__)
+#define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
+#define IC2 A1 //Vref R0=0.33 充电2
+#define IC3 A0 //Vref R0=0.33 充电3
+#define IC4 A7 //Vref R0=0.33 充电4
+#define IC5 A5 //Vref R0=0.33 充电5
+#define IF1 A3 //Vref R0=0.33 放电1
 #define VCC A2 //Vref=1.1  1.1*VCC/1024/24.3*(24.3+499); //外接电源电压
 #define V1 A6  //Vref=1.1  1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
+#else //atmega32u4
+#define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
+#define IC2 A1 //Vref R0=0.33 充电2
+#define IC3 A0 //Vref R0=0.33 充电3
+#define IC4 A7 //Vref R0=0.33 充电4
+#define IC5 A5 //Vref R0=0.33 充电5
+#define IF1 A3 //Vref R0=0.33 放电1
+#define VCC A2 //Vref=1.1  1.1*VCC/1024/24.3*(24.3+499); //外接电源电压
+#define V1 A6  //Vref=1.1  1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
+#endif
 
+#define CHONG1 1
+#define CHONG2 2
+#define CHONG3 3
+#define CHONG4 4
+#define CHONG5 5
+#define FANG 6
+#define DISPSE_MAX 6
+//#define SNSET  11
+//EEPROM 地址定义
+#define SN_ADDR 10  //10 11 12 13  序列号
+#define Wd_al 2 // 2,3,4,5 报警温度
+#define Cin_min 6 //6,7,8,9  //温度map()校准参数4个，
+#define Cout_min 15 //15 16 17 18
+#define Cin_max  19 //19 20 21 22
+#define Cout_max 23 //23 24 25 26
+#define ADf   27 //27,28,29,30     放电
+#define ADc1  31 //31,32,33,34     充电1
+#define ADc2  35 //35,36,37,38     充电2
+#define ADc3  39 //39,40,41,42     充电3
+#define ADc4  43 //43,44,45,46     充电4
+#define ADc5  47 //47,48,49,50     充电5
+#define ADvcc 51 //51,52,53,54     Vcc
+#define ADv1  55 //55,56,57,58     v1
+//100 ... 164  //mah   
+
+#include <MsTimer2.h>
 #include<stdlib.h>
 #include <LiquidCrystal.h>   //LCD1602a 驱动
-LiquidCrystal lcd(8, 7, 6, 5, 4, 3); //(RS,EN,D4,D5,D6,D7)
-
+LiquidCrystal lcd(8,7,6,5,4,3); //(RS,EN,D4,D5,D6,D7)  lcd接这6条腿
+#include <EEPROM.h>
 #include <Wire.h>
 #include "ds3231.h"
-
 #include <SD.h>  //sdcard 和vfat的库
 
+#define CHARGE 0
+#define TOFULL 1 //先充电到满
+#define FULLTOZERO 2 //然后放电到空 测放电容量
+#define ZEROTOFULL 3 //再充到满  测充电容量
+uint32_t sn; //序列号
+float wd;   //实际温度值
+float wd_al; //alert 温度值
+float swd;  //adc
+struct ts t; //realtime
+float advcc,adv1,adf,adc1,adc2,adc3,adc4,adc5,wdin_min,wdin_max,wdout_min,wdout_max;   //各种校准数值
+uint16_t ic3,ic2,vcc,if1,ic1,ic5,v1,v1d,ic4,r;  //各种测试值  
+uint16_t sv1d,svcc,sif1,sic1,sic2,sic3,sic4,sic5,sv1; 
+char dispbuff[18];  //显示缓冲区
 
-#define CHARGE 0  //充电状态
-#define TOFULL 1 //第一步先充满
-#define FULLTOZERO 2 //第二步放到空，测容量
-#define ZEROTOFULL 3   //第三步充到满，测充电电量
-uint8_t proc __attribute__ ((section (".noinit")));      //状态
-uint8_t procxor __attribute__ ((section (".noinit")));   //状态校验
-
+uint8_t setCount __attribute__ ((section (".noinit"))); //复位计数，用于进设置，校准等功能模块
+uint8_t proc __attribute__ ((section (".noinit")));   //当前进程
+uint32_t b[6] ;  //累计值  b[0]=放电累计  b[1] 充电1累计...
+uint8_t procxor __attribute__ ((section (".noinit")));
+uint8_t check() {
+  return proc^'L';
+}
+void calc_check() 
+{
+  procxor=check();
+}
 void setproc(uint8_t dat)
 {  //存储的校验， 因为proc重启不会清零， 所以要根据校验进行初始化。
   proc=dat;
-  procxor=dat^'L';
+  calc_check();
 }
 
+//从eeprom读取一个浮点数
+float eeprom_float_read(uint16_t address) {
+  float fl;
+  uint8_t * fli = (uint8_t *) &fl;
+  fli[0]=EEPROM.read(address);
+  fli[1]=EEPROM.read(address+1);
+  fli[2]=EEPROM.read(address+2);
+  fli[3]=EEPROM.read(address+3);
+  return fl;
+}
+
+//写一个浮点数到eeprom
+void eeprom_float_write(uint16_t address,float val) {
+  float fl;
+  uint8_t * fli = (uint8_t *) &fl;
+  if(eeprom_float_read(address)==val) return; //相同就不写
+  fl=val;
+  EEPROM.write(address,fli[0]);
+  EEPROM.write(address+1,fli[1]);
+  EEPROM.write(address+2,fli[2]);
+  EEPROM.write(address+3,fli[3]);
+  return ;
+}
 void sdSave(String dataString) {
+  //存字符串到sdcard的datalog.csv
   pinMode(10,OUTPUT); //10脚是cs
   File dataFile = SD.open("datalog.csv", FILE_WRITE);
   if(!dataFile) {
@@ -40,6 +119,9 @@ void sdSave(String dataString) {
   if (dataFile) {
     dataFile.println(dataString);
     dataFile.close();
+  }
+  else {
+    Serial.println("sdcard error!");
   }
 }
 void charge()
@@ -71,8 +153,6 @@ uint8_t getkey()
   miso=digitalRead(12);
   scko=digitalRead(13);
 
-  // pinMode(10,OUTPUT); //ss,cs  原本作为sd卡时是输出，不需要修改
-  // pinMode(12,INPUT);  //miso  原本作为sd卡时是输入，不需要修改
   pinMode(13,INPUT); //sck    sd卡时是输出， 这里改为输入
   digitalWrite(12,HIGH);   //上拉20k电阻
   digitalWrite(13,HIGH);   //上拉20k电阻
@@ -84,60 +164,70 @@ uint8_t getkey()
   digitalWrite(10,sso);
   digitalWrite(12,miso);
   digitalWrite(13,scko);
-  lcd.setCursor(3, 0); //设置光标到第一行第14个字符位置
-  if(ret&1) lcd.print('v');
-  else lcd.print('V');
-  lcd.setCursor(9, 0); //设置光标到第一行第14个字符位置
-  if(ret&2) lcd.print('v');
-  else lcd.print('V');
+  if(millis()<4000) return ret;
   return ret;
 }
-uint16_t getval(int VIN)   //读取电流电压值  电流为ma ，电压为mV数/10
+
+void ad()
 {
-  uint32_t val; //每个数字都乘以100倍,是为了保留足够的小数位数
-  boolean i11,A5V;
-  i11=digitalRead(11); 
-  A5V=digitalRead(A5);
-  pinMode(VIN,INPUT);
-  digitalWrite(VIN,LOW);
-  delay(1);  //这个要测试一下，是否可以缩短。
-  if(VIN==A4) {
-    digitalWrite(11,LOW);  
-    delay(1);
-  }
-  switch(VIN) {
-  case VCC: //因为选的都是0.1%精度的电阻，所以不需要校准，就可以根据计算保证精度 
-    val=1.1*1000*100*(24.3+499)/24.3/1024;  
-    break;
-  case V1:   //10mv
-    val=1.1*1000*100*(97.6+499)/97.6/1024;                       
-    break;
-  default:  //ma
-    val=1.1*1000*100/(0.33)/1024;    //1000->换算成ma, 1024->10位AD, 0.33->取样电阻
-  }
-  val=val*analogRead(VIN)/100;
+  float val;  //存放中间结果
+  boolean A5V;
+  A5V=digitalRead(A5); //保存A5的值
+  pinMode(A5,INPUT);
+  digitalWrite(A5,LOW);  
+  digitalWrite(A4,LOW);
+  digitalWrite(11,LOW);  
+  delay(1);
+  sif1=analogRead(IF1);
+  sv1=analogRead(V1);
+  sic1=analogRead(IC1);  
+  disable();
+  delay(1); //!
+  sic2=analogRead(IC2);
+  sic3=analogRead(IC3);
+  sic4=analogRead(IC4);
+  sic5=analogRead(IC5);
+  svcc=analogRead(VCC);
+  sv1d=analogRead(V1);
   digitalWrite(11,HIGH);
-  if(VIN==VCC || VIN==V1) val=val/10;
   pinMode(A5,OUTPUT);
   if(digitalRead(A5)!=A5V) digitalWrite(A5,A5V);
-  return(val); 
+  oneset();
+  val=advcc*svcc;
+  vcc=val;  //0.1mv
+  val=adv1*sv1;
+  v1=val;  //mv
+  val=adv1*sv1d;
+  v1d=val; //mv
+  val=adf*sif1;
+  if1=val; //ma
+  val=adc1*sic1;
+  ic1=val;  //ma
+  val=adc2*sic2;
+  ic2=val;  //ma
+  val=adc3*sic3;
+  ic3=val; //ma
+  val=adc4*sic4;
+  ic4=val; //ma
+  val=adc5*sic5;
+  ic5=val;
+  float x=0;
+  if(proc==FULLTOZERO && if1>50) { //放电
+    if(sv1<sv1d) {
+      x=adv1*(sv1d-sv1)/sif1/adf-0.33; //0.33?
+      r=x*1000;  
+    }  
+  } 
+  else if(ic1>50) {
+    if(v1d<v1) {
+      x=adv1*(sv1-sv1d)/sic1/adc1-0.33; //0.33?
+      r=x*1000;  
+    }
+  }
 }
-String getma(uint16_t a) 
-{  //毫安数是3位的， 前面要补0,
-  String c;
-  if(a>999) a=999; //最大999ma
-  if(a<10) c="0";  //补2个0
-  if(a<100) c+="0"; //补1个0
-  return c+String(a);
-}
-String getmv(uint16_t v)
-{  //电压最多取2位小数，前面补0
-  v=v%100;
-  if(v<10) return "0"+String(v);
-  else return String(v);
-}
+
 void oneset()
-{
+{ //根据当前进程，设置充电/放电状态
   switch(proc) {
   case CHARGE:
   case TOFULL:
@@ -149,18 +239,425 @@ void oneset()
     break;
   }
 }
+uint8_t bz;
+void setwd_al(){ //设置报警温度
+  uint8_t key;
+  disptime();
+  lcd.clear();
+  lcd.print("set alert \x03");
+  lcd.setCursor(0,1);
+  lcd.print(wd_al);
+  lcd.print("\x03 alert");
+  waitKeyUp();
+  setCount--;
+  for(;;){
+    waitKeyDown();
+    key=getkey();
+    if(key==1) {
+      wd_al += 0.25;
+    }
+    else if(key==2) {
+      wd_al -= 0.25;
+    }
+    waitKeyUp();
+    lcd.setCursor(0,1);
+    lcd.print(wd_al);
+    eeprom_float_write(Wd_al, wd_al);
+
+  }
+}
+void setwd(){
+  uint8_t key;
+  disptime();
+  lcd.clear();
+  lcd.print("set ");
+  lcd.print(swd);
+  lcd.print("\x03");
+  lcd.setCursor(0,1);
+  lcd.print(wd);
+  lcd.print("\x03");
+  waitKeyUp();
+  setCount--;
+
+  if(swd <6.0) {
+    lcd.print(" set zero ");
+  }
+  else{
+    lcd.print(" set High ");
+  }
+  for(;;) {
+    waitKeyDown();
+    key=getkey();
+    if(key==1) {
+      wd += 0.25;
+    }
+    else if(key==2) {
+      wd -= 0.25;
+    }
+    waitKeyUp();
+    lcd.setCursor(0,1);
+    lcd.print(wd);
+    if(swd<6.0) {
+      eeprom_float_write(Cin_min, swd);
+      eeprom_float_write(Cout_min,wd);
+    }
+    else {
+      eeprom_float_write(Cin_max,swd);
+      eeprom_float_write(Cout_max,wd);
+    }
+    Serial.print("Cin_min=");
+    Serial.print(eeprom_float_read(Cin_min));
+    Serial.print(",Cout_min=");
+    Serial.print(eeprom_float_read(Cout_min));
+    Serial.print(",Cin_max=");
+    Serial.print(eeprom_float_read(Cin_max));
+    Serial.print(",Cout_max=");
+    Serial.println(eeprom_float_read(Cout_max));
+  }
+}
+void setJz1() //放电1校准
+{
+  lcd.print("Calibration F1");
+  waitKeyUp();
+  setCount--;
+  Discharge();
+  ad();
+  Calibration(IF1);
+}
+void setJz2()
+{
+  lcd.print("Calibration V1");
+  waitKeyUp();
+  setCount--;
+  ad();
+  Calibration(V1);
+}
+
+void setJz() {  //校准充电2-5 ,vcc,v1
+  lcd.print("Calibration C1-5");
+  waitKeyUp();
+  setCount--;
+  ad();
+
+  for(;;) {
+    if(sic1>50) {
+      Calibration(IC1);
+    }
+    else if(sic2>50){
+      Calibration(IC2);
+    }
+    else if(sic3>50){
+      Calibration(IC3);
+    }
+    else if(sic4>50){
+      Calibration(IC4);
+    }
+    else if(sic5>50){
+      Calibration(IC5);
+    }
+    else {
+      Calibration(VCC);
+    }
+  }
+}
+uint16_t a2i(uint8_t offs,uint8_t count) {
+  uint16_t val=0;
+  for(;count>0;count--) {
+    val*=10;
+    val+=dispbuff[offs]&0xf;
+    offs++;
+  }
+  return val;
+}
+uint16_t set_mv(char * name,uint16_t  val) {
+  char ch;
+  ch='v';
+  if(val<4000) val=4000;
+  if(val>7000) val=7000;
+  sprintf(dispbuff,"%s=%dmv        ",name, val);
+  lcd.print(dispbuff);
+  modidisp("hhhh4000hhhhhhhh","hhhh7999hhhhhhhh");
+  val=a2i(4,4);
+  return val;
+}
+uint16_t set_ma(char * name,uint16_t val) {
+  char ch;
+  ch='v';
+  if(val<100) val=100;
+  if(val>700) val=700;
+  sprintf(dispbuff,"%s=%dma        ",name,val);
+  lcd.print(dispbuff);
+  modidisp("hhh100hhhhhhhhhh","hhh799hhhhhhhhh"); 
+  val=a2i(3,3);
+  return val;
+}
+void Calibration(uint8_t adpin) {
+  float val;
+  bz=0;
+  lcd.setCursor(0,1);
+  for(;;){
+    switch(adpin) {
+    case VCC:
+      vcc=set_mv("Vcc",vcc);
+      val=vcc;
+      advcc=val/svcc;
+      eeprom_float_write(ADvcc,advcc);
+      break;
+    case V1:
+      v1=set_mv("V1 ",v1);
+      val=v1;
+      adv1=val/sv1;
+      eeprom_float_write(ADv1,adv1);
+      break;
+    case IF1:
+      if1=set_ma("F1",if1);
+      val=if1;
+      adf=val/sif1;
+      eeprom_float_write(ADf,adf);
+      break;
+    case IC1: 
+      ic1=set_ma("C1",ic1);
+      val=ic1;
+      adc1=val/sic1;
+      eeprom_float_write(ADc1,adc1);
+      break;
+    case IC2:
+      ic2=set_ma("C2",ic2);
+      val=ic2;
+      adc2=val/sic2;
+      eeprom_float_write(ADc2,adc2);
+      break;
+    case IC3:
+      ic3=set_ma("C3",ic3);
+      val=ic3;
+      adc3=val/sic3;
+      eeprom_float_write(ADc3,adc3);
+      break;
+    case IC4:
+      ic4=set_ma("C4",ic4);
+      val=ic4;
+      adc4=val/sic4;
+      eeprom_float_write(ADc4,adc4);
+      break;
+    case IC5:
+      ic5=set_ma("C5",ic5);
+      val=ic5;
+      adc5=val/sic5;
+      eeprom_float_write(ADc5,adc5);
+      break;
+    }
+  }
+}
+void modidisp(char * mins,char * maxs){
+  uint8_t key;
+  for(uint8_t n=0;n<16;n++){
+    if(mins[bz]=='h'){
+      bz++;
+      if(bz==16) bz=0;  
+    }
+    else 
+      break;
+  }
+
+  lcd.setCursor(bz,1);
+  lcd.blink();
+  waitKeyDown();
+  key=getkey();
+  Serial.print("key=");
+  Serial.println(key);
+  waitKeyUp();
+  lcd.noBlink();
+  if(key==2) {
+    bz++;
+    if(bz==16) bz=0;
+  }
+  else if(key==1){
+    if(dispbuff[bz]<=maxs[bz] & dispbuff[bz] >=mins[bz]) {
+      dispbuff[bz]++;
+      if(dispbuff[bz]>maxs[bz]) dispbuff[bz]=mins[bz];
+    }
+    Serial.print("b=");
+    Serial.println(dispbuff);
+  }
+  if(dispbuff[bz]<mins[bz]) dispbuff[bz]=mins[bz];
+  if(dispbuff[bz]>maxs[bz]) dispbuff[bz]=maxs[bz];
+
+  lcd.setCursor(0, 1);  
+  lcd.print(dispbuff);
+}
+void waitKeyUp()
+{
+  for(;;)  if(!getkey()) break;
+}   
+void waitKeyDown()
+{
+  for(;;)  if(getkey()) break;
+}   
+void setTime(){
+  bz=0;
+  lcd.print("setTime ");
+  lcd.print(setCount);
+  waitKeyUp();
+  for(;;) {
+    lcd.noBlink();
+    disptime();
+    lcd.setCursor(bz,1);
+    lcd.blink();
+    modidisp("hh10h00h00h00h00","hh49h19h39h29h59");
+    //2015-07-21 00:00   2046-12-31 23:59
+
+    t.sec = 00;
+    t.min = a2i(14,2);//(dispbuff[14]&0xf)*10+dispbuff[15]&0xf;//inp2toi(dispbuff, 14);
+    t.hour = a2i(11,2);//(dispbuff[11]&0xf)*10+dispbuff[12]&0xf;//inp2toi(dispbuff, 11);
+    t.wday=1;
+    t.mday = a2i(8,2);//(dispbuff[8]&0xf)*10+dispbuff[9]&0xf;//inp2toi(dispbuff, 8);
+    t.mon = a2i(5,2);//inp2toi(dispbuff, 5);
+    t.year = 2000 + a2i(2,2);//inp2toi(dispbuff, 2);
+    if(t.year>=2048) t.year=2015;
+    if(t.mday==0) t.mday=1;
+    if(t.mday>31)  t.mday=30;
+    if(t.hour>59) t.hour=50;
+    if(t.mon>12 | t.mon==0) t.mon=10;
+    if(t.mon==2 && t.mday>29) t.mday=20;
+    if(t.mon==4 | t.mon==6 |t.mon==9 | t.mon==11) 
+      if(t.mday>30) t.mday=30;
+    Wire.begin();
+    DS3231_init(DS3231_INTCN);
+    DS3231_set(t);    
+  }
+}
+void save_eeprom(){
+  //存字符串到sdcard的datalog.csv
+  lcd.clear();
+  lcd.print("EEPROM to file");
+  waitKeyUp();
+  setCount--;
+  pinMode(10,OUTPUT); //10脚是cs
+  lcd.setCursor(0,1);
+  //sprintf(dispbuff,"eeprom_%d.bin",sn);
+  //lcd.print(dispbuff);
+  File dataFile = SD.open("eeprom.bin", FILE_WRITE);
+  if(!dataFile) {
+    SD.begin(10);
+    dataFile = SD.open("eeprom.bin", FILE_WRITE);
+  }
+  if (dataFile) {
+    for( uint16_t n=0;n<512;n++) {
+      dataFile.write(EEPROM.read(n));
+    }
+    dataFile.close();
+    lcd.setCursor(14,1);
+    lcd.print("OK");
+  }
+  else {
+    lcd.setCursor(13,1);
+    lcd.print("ERR");
+  }
+  for(;;) ;
+}
 boolean i=false;
+void calc_sum() {
+  if(ic1>40) b[1]+=ic1;
+  if(ic2>40) b[2]+=ic2;
+  if(ic3>40) b[3]+=ic3;
+  if(ic4>40) b[4]+=ic4;
+  if(ic5>40) b[5]+=ic5;
+  if(if1>40) b[0]+=if1;
+}
+
 void setup()
 {
-  struct ts t;
-  String hello="Hello,Cfido!";
+  uint8_t upchar[8] = {  /*上箭头*/
+    0b00100,
+    0b01110,
+    0b10101,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100
+  }
+  ,
+  downchar[8] = { /*下箭头*/
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b00100,
+    0b10101,
+    0b01110,
+    0b00100
+  }
+  ,
+  wdchar[8] = { /*摄氏度*/
+    0b10000,
+    0b00000,
+    0b01110,
+    0b10001,
+    0b10000,
+    0b10000,
+    0b10001,
+    0b01110
+  }
+  ,
+  oumchar[8] = {  /*欧姆*/
+    0b11011,
+    0b10101,
+    0b10101,
+    0b00000,
+    0b11111,
+    0b10001,
+    0b01010,
+    0b11011
+  }
+  ,
+  machar[8] = {  /* ma */
+    0b11011,
+    0b10101,
+    0b10101,
+    0b10001,
+    0b00100,
+    0b01010,
+    0b01110,
+    0b10001
+  };
+
+  //载入序列号
+  sn=EEPROM.read(SN_ADDR + 3) << 24;
+  sn+=EEPROM.read(SN_ADDR + 2) << 16;
+  sn+=EEPROM.read(SN_ADDR + 1) << 8;
+  sn+=EEPROM.read(SN_ADDR);
+
+  //载入校准值
+  adf=eeprom_float_read(ADf);  //放电ad
+  adc1=eeprom_float_read(ADc1); //充电1ad
+  adc2=eeprom_float_read(ADc2);  //充电2ad
+  adc3=eeprom_float_read(ADc3);  //充电3ad
+  adc4=eeprom_float_read(ADc4);  //充电4ad
+  adc5=eeprom_float_read(ADc5);  //充电5ad
+  advcc=eeprom_float_read(ADvcc);
+  adv1=eeprom_float_read(ADv1);
+  wd_al=eeprom_float_read(Wd_al);   //alert 温度
+  wdin_min=eeprom_float_read(Cin_min);   //0度时对应的AD值
+  wdin_max=eeprom_float_read(Cin_max);     //Cout_max温度对应的 AD值
+  wdout_min=eeprom_float_read(Cout_min);       //温度线性校准，一个点在0度， 另一个点取某气温。
+  wdout_max=eeprom_float_read(Cout_max);   //某温度
+  String hello="Cfido!V" VER " ";
   Serial.begin(9600); //串口9600
   Serial.println(hello);
+  //sdSave("hhhhhh");
   analogReference(INTERNAL); //使用atmega328的内部1.1V 基准源
   analogRead(A0); //第一次转换不准确， 要用掉
   lcd.begin(16, 2); //lcd初始化  16字符2行
+  lcd.createChar(2, upchar);   //^
+  lcd.createChar(1, downchar); //V
+  lcd.createChar(3, wdchar);  //sheshidu
+  lcd.createChar(4, oumchar);   //om
+  lcd.createChar(5, machar);  //ma  
   lcd.clear();
   lcd.print(hello); 
+  lcd.print("SN=");
+  lcd.print(sn);
   pinMode(11,OUTPUT);
   digitalWrite(11,HIGH);
   Wire.begin();
@@ -168,75 +665,162 @@ void setup()
   DS3231_clear_a1f();
   DS3231_clear_a2f();
   DS3231_set_creg(0x4);
-  DS3231_get(&t);
-  for(int a=0;a<10;a++) {
-    delay(100); 
-    digitalWrite(11,!digitalRead(11)); //lcd背光煽动10次
+  if(setCount>8) setCount=0;
+  if(getkey()==1) setCount++;
+  if((DS3231_get_sreg() & 0x80) | getkey()==1) {
+    DS3231_set_sreg(0);
+    lcd.clear();
+    switch(setCount) {
+    case 3:
+      setwd();
+      break;
+    case 4:
+      setwd_al(); //设置报警温度
+      break;
+    case 5:
+      setJz();  //校准充电1-5,Vcc
+      break;
+    case 6:
+      setJz1();  //放电1校准
+      break;
+    case 7:
+      setJz2();  //校准V1
+      break;
+    default:
+      setTime();
+    }
   }
-  if(proc^'L'!=procxor) setproc(CHARGE);  //proc校验不过，就初始化。
+  setCount=0;
+  disptime();
+  for(int a=0;a<20;a++) {
+    delay(100); 
+    digitalWrite(11,!digitalRead(11)); //lcd背光煽动20次
+  }
+  if(check()!=procxor) {
+    proc=CHARGE;
+    calc_check();  //proc校验不过，就初始化。
+  }
   oneset();
+  MsTimer2::set(1000, calc_sum); // 1s period
+  MsTimer2::start();
 }
 uint32_t dida=0;
 uint8_t keya=0;
+int8_t dispse=0;
 void keydown()
-{ 
+{
+  switch(getkey()) {
+  case 1:
+    waitKeyUp();
+     dispse++;
+    break;
+  case 2:
+  waitKeyUp();
+ dispse--;
+} 
+if(dispse<0) dispse=0;
+if(dispse>DISPSE_MAX) dispse=DISPSE_MAX;
 }
+
 void disptime()
 {
-  struct ts t;
-  char timestr[18];
-  boolean o11=digitalRead(11);
   pinMode(11,OUTPUT);
   digitalWrite(11,HIGH);
   Wire.begin();
   DS3231_get(&t);
-  snprintf(timestr, 17, "%04d-%02d-%02d %02d:%02d",t.year,
+  swd=DS3231_get_treg();
+  //温度校准
+  wd=(swd - wdin_min) * (wdout_max - wdout_min)/(wdin_max - wdin_min) + wdout_min;
+  wd=wd*4;
+  wd=(int)wd;
+  wd=wd/4;
+  sprintf(dispbuff,  "%04d-%02d-%02d %02d:%02d",t.year,
   t.mon, t.mday, t.hour, t.min);
   lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
-  lcd.print(timestr);   //显示buff到第二行
+  lcd.print(dispbuff);   //显示buff到第二行
+
   return;
 }
+
+void displog(char * msg,int8_t sel){
+lcd.clear();
+lcd.print("at ");
+for(uint8_t i=0;i<10;i++) lcd.write(EEPROM.read(100+16*sel+i)); //日期
+lcd.setCursor(0,1);
+lcd.print(msg);
+lcd.print(":");
+lcd.print(eeprom_float_read(100+11+16*sel));
+}
+
 void loop() 
 { //循环
   String stringVal ; //显示buff
-  uint16_t va; //存放模拟量的值
   if(keya!=getkey()) {
     keydown();
     keya=getkey();
   }
-  if(dida+2000>millis()) return;
+  if(wd>wd_al) digitalWrite(11,millis()/100%2);
+  if(dida+1000>millis()) return; 
   dida=millis();
-  if(proc!=ZEROTOFULL && proc !=FULLTOZERO) {
-    disable(); // 关闭1号电池的充放电，
+  ad();  
+switch(dispse){
+case FANG:
+displog("F1",FANG);
+break;
+case CHONG1:
+displog("C1",CHONG1);
+break;
+case CHONG2:
+displog("C2",CHONG2);
+break;
+case CHONG3:
+displog("C3",CHONG3);
+break;
+case CHONG4:
+displog("C4",CHONG4);
+break;
+case CHONG5:
+displog("C5",CHONG5);
+break;
+default:
+  if(if1>10)
+    sprintf(dispbuff,"%01d.%01d %01d.%01d %03d\x01%03d\x04",vcc/1000,(vcc/100)%10,v1/1000,(v1/100)%10,if1,r);
+  else if(ic1>10)
+    sprintf(dispbuff,"%01d.%01d %01d.%02d %03d %d\x03",vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100,ic1,(int)wd);
+  else{
+    sprintf(dispbuff,"%01d.%01d %01d.%02d      " VER,vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100);
   }
-  va=getval(VCC); //测电源电压
-  stringVal=String(va/100)+"."+String(va%100/10);  //换算成字符串 
-  va=getval(V1); //测一号电池的电压， 关闭充放电的情况下测试
-  oneset(); //1号电池测完，测完打开到充电模式
-  stringVal +="V "+String(va/100)+"."+getmv(va%100)+"V "; //换算成字符串
-  va=getval(IF1); //放电电流
-  if(va>0) 
-    stringVal +="-"+getma(va)+" "; //如果不是0,则作为负值放入显示buff
-  va=getval(IC1); //测充电电流
-  if(va>0)
-    stringVal += getma(va)+"ma"; //放入显示buff
-  Serial.println(stringVal); //把显示buff送串口
+  Serial.println(dispbuff); //把显示buff送串口
   lcd.setCursor(0, 0); //设置光标到第一行第一个字符位置
-  lcd.print(stringVal+" ");  //显示字符串到第一行
+  lcd.print(dispbuff);  //显示字符串到第一行
+  if(if1<=10 && ic1<=10) {
+    lcd.setCursor(10,0);
+    lcd.print(wd);
+    lcd.print("\x03");
+  }
   //开始准备第二行
   stringVal="";
   if(i) {
-    stringVal = getma(getval(IC2))+" "; //把2号电流放入buff，3位数字加一个空格 
-    stringVal+=getma(getval(IC3))+" "; //把3号电流放入buff，3位数字加一个空格
-    stringVal+=getma(getval(IC4))+" "; //把4号电流放入buff，3位数字加一个空格
-    stringVal+=getma(getval(IC5))+" "; //把5号电流放入buff，3位数字加一个空格
+    if( ic2!=0 | ic3!=0 | ic4!=0 | ic5 != 0 )  {
+    sprintf(dispbuff,"%03d %03d %03d %03d ",ic2,ic3,ic4,ic5);
     lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
-    lcd.print(stringVal);   //显示buff到第二行
+    lcd.print(dispbuff);   //显示buff到第二行
+    }else{
+    lcd.setCursor(13,1);
+    lcd.print(" ");
+    }
     i=false;
   }//第二行准备完毕
   else {
     i=true;
     disptime();
-  } 
-  Serial.print(stringVal+"\r\n"); //输出到串口
+  }
+break;
 }
+  Serial.println(dispbuff); //输出到串口
+}
+
+
+
+
+
