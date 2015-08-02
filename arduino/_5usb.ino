@@ -108,7 +108,7 @@ void eeprom_float_write(uint16_t address,float val) {
   EEPROM.write(address+3,fli[3]);
   return ;
 }
-void sdSave(String dataString) {
+void sdSave(char * dataString) {
   //存字符串到sdcard的datalog.csv
   pinMode(10,OUTPUT); //10脚是cs
   File dataFile = SD.open("datalog.csv", FILE_WRITE);
@@ -642,7 +642,7 @@ void setup()
   wdin_max=eeprom_float_read(Cin_max);     //Cout_max温度对应的 AD值
   wdout_min=eeprom_float_read(Cout_min);       //温度线性校准，一个点在0度， 另一个点取某气温。
   wdout_max=eeprom_float_read(Cout_max);   //某温度
-  String hello="Cfido!V" VER " ";
+  char hello[]="Cfido!V" VER " ";
   Serial.begin(9600); //串口9600
   Serial.println(hello);
   //sdSave("hhhhhh");
@@ -704,22 +704,37 @@ void setup()
   MsTimer2::set(1000, calc_sum); // 1s period
   MsTimer2::start();
 }
-uint32_t dida=0;
+uint32_t dida=0,dispHoldTime=millis();
 uint8_t keya=0;
 int8_t dispse=0;
 void keydown()
 {
   switch(getkey()) {
   case 1:
+  dida=millis();
     waitKeyUp();
+ if(proc==CHARGE & (millis()-dida) > 3000){
+ setproc(TOFULL);
+ return;
+ }
      dispse++;
+     dispHoldTime=millis()+10000;  
     break;
   case 2:
+  dida=millis();
   waitKeyUp();
- dispse--;
+  if(proc!=CHARGE & (millis()-dida) >3000) {
+  setproc(CHARGE);
+  return;
+  }
+  dispse--;
+dispHoldTime=millis()+10000;  
+  break;
+  default:
+  return;
 } 
-if(dispse<0) dispse=0;
-if(dispse>DISPSE_MAX) dispse=DISPSE_MAX;
+if(dispse<0) dispse=DISPSE_MAX;
+if(dispse>DISPSE_MAX) dispse=0;
 }
 
 void disptime()
@@ -745,24 +760,71 @@ void disptime()
 void displog(char * msg,int8_t sel){
 lcd.clear();
 lcd.print("at ");
-for(uint8_t i=0;i<10;i++) lcd.write(EEPROM.read(100+16*sel+i)); //日期
+for(uint8_t i=0;i<10;i++) lcd.write(EEPROM.read(100+16*sel+i)); //日期 [100] 放电 ， [116] 充1 ，[132] 充2，[148] 充3 .... 
 lcd.setCursor(0,1);
 lcd.print(msg);
 lcd.print(":");
 lcd.print(eeprom_float_read(100+11+16*sel));
+lcd.print("ma");
 }
 
-void loop() 
-{ //循环
-  String stringVal ; //显示buff
-  if(keya!=getkey()) {
-    keydown();
-    keya=getkey();
-  }
-  if(wd>wd_al) digitalWrite(11,millis()/100%2);
-  if(dida+1000>millis()) return; 
-  dida=millis();
-  ad();  
+uint32_t next_save=0;
+void savelog(){
+boolean lt=0;
+if(next_save<millis()) {
+lt=1;
+next_save=millis()+600000;  //10min
+}
+for(int8_t i=0;i<6;i++){
+save_add(b[i],i,lt);
+}
+}
+uint16_t eeprom_int16_read(uint16_t addr){
+return((uint16_t)EEPROM.read(addr)+(uint16_t)(EEPROM.read(addr+1)<<8));
+}
+void eeprom_int16_write(uint16_t addr,uint16_t dat) {
+if(eeprom_int16_read(addr)==dat) return;
+EEPROM.write(addr,dat&0xff);
+EEPROM.write(addr+1,(dat>>8)&0xff);
+}
+//[100]-[109] 2015-07-01 [110]-[113] float mah, [114]-[116] uint16_t ma,
+boolean cc[6]={0,0,0,0,0,0};
+void save_add(uint32_t mas,uint8_t sel,boolean lt) {
+//mas 毫安秒    sel 通道  lt=0 不存 lt=1存eeprom;
+uint16_t ma; 
+
+uint16_t befma=eeprom_int16_read(100+sel*16+14);
+switch(sel){
+case 0:
+ma=if1;
+break;
+case 1:
+ma=ic1;
+break;
+case 2:
+ma=ic2;
+break;
+case 3:
+ma=ic3;
+break;
+case 4:
+ma=ic4;
+break;
+case 5:
+ma=ic5;
+break;
+default:
+return;
+}
+
+
+if(ma>befma*2 & ma>150) {
+//更换了电池
+b[sel]=0; //清零
+}
+}
+void disp() {
+  if(dispse > 0 & dispHoldTime>millis()) { 
 switch(dispse){
 case FANG:
 displog("F1",FANG);
@@ -783,6 +845,12 @@ case CHONG5:
 displog("C5",CHONG5);
 break;
 default:
+break;
+}
+lcd.setCursor(15,1);
+lcd.print((dispHoldTime-millis())/1000);
+return;
+  }
   if(if1>10)
     sprintf(dispbuff,"%01d.%01d %01d.%01d %03d\x01%03d\x04",vcc/1000,(vcc/100)%10,v1/1000,(v1/100)%10,if1,r);
   else if(ic1>10)
@@ -799,7 +867,6 @@ default:
     lcd.print("\x03");
   }
   //开始准备第二行
-  stringVal="";
   if(i) {
     if( ic2!=0 | ic3!=0 | ic4!=0 | ic5 != 0 )  {
     sprintf(dispbuff,"%03d %03d %03d %03d ",ic2,ic3,ic4,ic5);
@@ -815,9 +882,21 @@ default:
     i=true;
     disptime();
   }
-break;
-}
   Serial.println(dispbuff); //输出到串口
+}
+void loop()
+{ //循环
+if(wd>wd_al) digitalWrite(11,millis()/100%2);
+
+if(keya!=getkey()) {
+    keya=getkey();
+    keydown();
+    disp();
+  }
+  if(dida+1000>millis()) return; 
+  dida=millis();
+  ad();  
+  disp();
 }
 
 
