@@ -804,6 +804,11 @@ return;
   else{
     sprintf(dispbuff,"%01d.%01d %01d.%02d      " VER,vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100);
   }
+  if(i==true & proc != 0) {
+  dispbuff[0]=proc|0x30;
+  dispbuff[1]='/';
+  dispbuff[2]='3';
+  }
   Serial.println(dispbuff); //把显示buff送串口
   lcd.setCursor(0, 0); //设置光标到第一行第一个字符位置
   lcd.print(dispbuff);  //显示字符串到第一行
@@ -834,15 +839,14 @@ boolean have100ma[6]={false,false,false,false,false,false},have0ma[6]={false,fal
 void proc_select() {
 switch(proc) {
 case TOFULL:
-if(ic[1]>100 & ic[1] <150) have100ma[0]=true;
-if(ic[1]==0 & have100ma[1]==true) {
+if(ic[1]==0) {
 have100ma[1]=false;
 setproc(FULLTOZERO);
 b[0]=0;
 }
 break;
 case FULLTOZERO:
-if(v1>3600) {  //3.6V终止放电电压
+if(v1<3600) {  //3.6V终止放电电压
 b[1]=0;
 have0ma[1]=false;
 setproc(ZEROTOFULL);
@@ -884,6 +888,7 @@ have0ma[i1]=false;
 void loop()
 { //循环
 if(wd>wd_al) digitalWrite(11,millis()/100%2);
+oneset();
 proc_select();
 fd();
 if(keya!=getkey()) {
