@@ -1,4 +1,4 @@
-#define VER "1.2"
+#define VER "1.3"
 //ad管脚定义
 #if defined(__AVR_ATmega328P__)
 #define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
@@ -63,9 +63,9 @@ float wd;   //实际温度值
 float wd_al; //alert 温度值
 float swd;  //adc
 struct ts t; //realtime
-float advcc,adv1,adf,adc1,adc2,adc3,adc4,adc5,wdin_min,wdin_max,wdout_min,wdout_max;   //各种校准数值
-uint16_t ic3,ic2,vcc,if1,ic1,ic5,v1,v1d,ic4,r;  //各种测试值  
-uint16_t sv1d,svcc,sif1,sic1,sic2,sic3,sic4,sic5,sv1; 
+float advcc,adv1,adc[6],wdin_min,wdin_max,wdout_min,wdout_max;   //各种校准数值
+uint16_t ic[6],vcc,ic5,v1,v1d,r;  //各种测试值  
+uint16_t sv1d,svcc,sic[6],sv1; 
 char dispbuff[18];  //显示缓冲区
 
 uint8_t setCount __attribute__ ((section (".noinit"))); //复位计数，用于进设置，校准等功能模块
@@ -178,15 +178,15 @@ void ad()
   digitalWrite(A4,LOW);
   digitalWrite(11,LOW);  
   delay(1);
-  sif1=analogRead(IF1);
+  sic[0]=analogRead(IF1);
   sv1=analogRead(V1);
-  sic1=analogRead(IC1);  
+  sic[1]=analogRead(IC1);  
   disable();
   delay(1); //!
-  sic2=analogRead(IC2);
-  sic3=analogRead(IC3);
-  sic4=analogRead(IC4);
-  sic5=analogRead(IC5);
+  sic[2]=analogRead(IC2);
+  sic[3]=analogRead(IC3);
+  sic[4]=analogRead(IC4);
+  sic[5]=analogRead(IC5);
   svcc=analogRead(VCC);
   sv1d=analogRead(V1);
   digitalWrite(11,HIGH);
@@ -199,28 +199,20 @@ void ad()
   v1=val;  //mv
   val=adv1*sv1d;
   v1d=val; //mv
-  val=adf*sif1;
-  if1=val; //ma
-  val=adc1*sic1;
-  ic1=val;  //ma
-  val=adc2*sic2;
-  ic2=val;  //ma
-  val=adc3*sic3;
-  ic3=val; //ma
-  val=adc4*sic4;
-  ic4=val; //ma
-  val=adc5*sic5;
-  ic5=val;
+  for(uint8_t i1=0;i1<6;i1++){
+  val=adc[i1]*sic[i1];
+  ic[i1]=val; //ma
+  }
   float x=0;
-  if(proc==FULLTOZERO && if1>50) { //放电
+  if(proc==FULLTOZERO && ic[0]>50) { //放电
     if(sv1<sv1d) {
-      x=adv1*(sv1d-sv1)/sif1/adf-0.33; //0.33?
+      x=adv1*(sv1d-sv1)/sic[0]/adc[0]-0.33; //0.33?
       r=x*1000;  
     }  
   } 
-  else if(ic1>50) {
+  else if(ic[1]>50) {
     if(v1d<v1) {
-      x=adv1*(sv1-sv1d)/sic1/adc1-0.33; //0.33?
+      x=adv1*(sv1-sv1d)/sic[1]/adc[1]-0.33; //0.33?
       r=x*1000;  
     }
   }
@@ -340,19 +332,19 @@ void setJz() {  //校准充电2-5 ,vcc,v1
   ad();
 
   for(;;) {
-    if(sic1>50) {
+    if(sic[1]>50) {
       Calibration(IC1);
     }
-    else if(sic2>50){
+    else if(sic[2]>50){
       Calibration(IC2);
     }
-    else if(sic3>50){
+    else if(sic[3]>50){
       Calibration(IC3);
     }
-    else if(sic4>50){
+    else if(sic[4]>50){
       Calibration(IC4);
     }
-    else if(sic5>50){
+    else if(sic[5]>50){
       Calibration(IC5);
     }
     else {
@@ -410,40 +402,40 @@ void Calibration(uint8_t adpin) {
       eeprom_float_write(ADv1,adv1);
       break;
     case IF1:
-      if1=set_ma("F1",if1);
-      val=if1;
-      adf=val/sif1;
-      eeprom_float_write(ADf,adf);
+      ic[0]=set_ma("F1",ic[0]);
+      val=ic[0];
+      adc[0]=val/sic[0];
+      eeprom_float_write(ADf,adc[0]);
       break;
     case IC1: 
-      ic1=set_ma("C1",ic1);
-      val=ic1;
-      adc1=val/sic1;
-      eeprom_float_write(ADc1,adc1);
+      ic[1]=set_ma("C1",ic[1]);
+      val=ic[1];
+      adc[1]=val/sic[1];
+      eeprom_float_write(ADc1,adc[1]);
       break;
     case IC2:
-      ic2=set_ma("C2",ic2);
-      val=ic2;
-      adc2=val/sic2;
-      eeprom_float_write(ADc2,adc2);
+      ic[2]=set_ma("C2",ic[2]);
+      val=ic[2];
+      adc[2]=val/sic[2];
+      eeprom_float_write(ADc2,adc[2]);
       break;
     case IC3:
-      ic3=set_ma("C3",ic3);
-      val=ic3;
-      adc3=val/sic3;
-      eeprom_float_write(ADc3,adc3);
+      ic[3]=set_ma("C3",ic[3]);
+      val=ic[3];
+      adc[3]=val/sic[3];
+      eeprom_float_write(ADc3,adc[3]);
       break;
     case IC4:
-      ic4=set_ma("C4",ic4);
-      val=ic4;
-      adc4=val/sic4;
-      eeprom_float_write(ADc4,adc4);
+      ic[4]=set_ma("C4",ic[4]);
+      val=ic[4];
+      adc[4]=val/sic[4];
+      eeprom_float_write(ADc4,adc[4]);
       break;
     case IC5:
-      ic5=set_ma("C5",ic5);
-      val=ic5;
-      adc5=val/sic5;
-      eeprom_float_write(ADc5,adc5);
+      ic[5]=set_ma("C5",ic[5]);
+      val=ic[5];
+      adc[5]=val/sic[5];
+      eeprom_float_write(ADc5,adc[5]);
       break;
     }
   }
@@ -557,12 +549,8 @@ void save_eeprom(){
 }
 boolean i=false;
 void calc_sum() {
-  if(ic1>40) b[1]+=ic1;
-  if(ic2>40) b[2]+=ic2;
-  if(ic3>40) b[3]+=ic3;
-  if(ic4>40) b[4]+=ic4;
-  if(ic5>40) b[5]+=ic5;
-  if(if1>40) b[0]+=if1;
+  for(uint8_t i1=0;i1<6;i1++) 
+  if(ic[i1]>40) b[i1]+=ic[i1];
 }
 
 void setup()
@@ -629,12 +617,12 @@ void setup()
   sn+=EEPROM.read(SN_ADDR);
 
   //载入校准值
-  adf=eeprom_float_read(ADf);  //放电ad
-  adc1=eeprom_float_read(ADc1); //充电1ad
-  adc2=eeprom_float_read(ADc2);  //充电2ad
-  adc3=eeprom_float_read(ADc3);  //充电3ad
-  adc4=eeprom_float_read(ADc4);  //充电4ad
-  adc5=eeprom_float_read(ADc5);  //充电5ad
+  adc[0]=eeprom_float_read(ADf);  //放电ad
+  adc[1]=eeprom_float_read(ADc1); //充电1ad
+  adc[2]=eeprom_float_read(ADc2);  //充电2ad
+  adc[3]=eeprom_float_read(ADc3);  //充电3ad
+  adc[4]=eeprom_float_read(ADc4);  //充电4ad
+  adc[5]=eeprom_float_read(ADc5);  //充电5ad
   advcc=eeprom_float_read(ADvcc);
   adv1=eeprom_float_read(ADv1);
   wd_al=eeprom_float_read(Wd_al);   //alert 温度
@@ -759,26 +747,18 @@ void disptime()
 
 void displog(char * msg,int8_t sel){
 lcd.clear();
-lcd.print("at ");
-for(uint8_t i=0;i<10;i++) lcd.write(EEPROM.read(100+16*sel+i)); //日期 [100] 放电 ， [116] 充1 ，[132] 充2，[148] 充3 .... 
-lcd.setCursor(0,1);
 lcd.print(msg);
 lcd.print(":");
-lcd.print(eeprom_float_read(100+11+16*sel));
-lcd.print("ma");
+if(ic[sel]>0){
+lcd.print("\x02");
+lcd.print(b[sel]/3600);
+lcd.print("mah");
+}
+lcd.setCursor(0,1);
+for(uint8_t i=0;i<16;i++) lcd.write(EEPROM.read(100+16*sel+i)); //日期 [100] 放电 ， [116] 充1 ，[132] 充2，[148] 充3 .... 
+
 }
 
-uint32_t next_save=0;
-void savelog(){
-boolean lt=0;
-if(next_save<millis()) {
-lt=1;
-next_save=millis()+600000;  //10min
-}
-for(int8_t i=0;i<6;i++){
-save_add(b[i],i,lt);
-}
-}
 uint16_t eeprom_int16_read(uint16_t addr){
 return((uint16_t)EEPROM.read(addr)+(uint16_t)(EEPROM.read(addr+1)<<8));
 }
@@ -789,40 +769,6 @@ EEPROM.write(addr+1,(dat>>8)&0xff);
 }
 //[100]-[109] 2015-07-01 [110]-[113] float mah, [114]-[116] uint16_t ma,
 boolean cc[6]={0,0,0,0,0,0};
-void save_add(uint32_t mas,uint8_t sel,boolean lt) {
-//mas 毫安秒    sel 通道  lt=0 不存 lt=1存eeprom;
-uint16_t ma; 
-
-uint16_t befma=eeprom_int16_read(100+sel*16+14);
-switch(sel){
-case 0:
-ma=if1;
-break;
-case 1:
-ma=ic1;
-break;
-case 2:
-ma=ic2;
-break;
-case 3:
-ma=ic3;
-break;
-case 4:
-ma=ic4;
-break;
-case 5:
-ma=ic5;
-break;
-default:
-return;
-}
-
-
-if(ma>befma*2 & ma>150) {
-//更换了电池
-b[sel]=0; //清零
-}
-}
 void disp() {
   if(dispse > 0 & dispHoldTime>millis()) { 
 switch(dispse){
@@ -847,29 +793,29 @@ break;
 default:
 break;
 }
-lcd.setCursor(15,1);
+lcd.setCursor(15,0);
 lcd.print((dispHoldTime-millis())/1000);
 return;
   }
-  if(if1>10)
-    sprintf(dispbuff,"%01d.%01d %01d.%01d %03d\x01%03d\x04",vcc/1000,(vcc/100)%10,v1/1000,(v1/100)%10,if1,r);
-  else if(ic1>10)
-    sprintf(dispbuff,"%01d.%01d %01d.%02d %03d %d\x03",vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100,ic1,(int)wd);
+  if(ic[0]>10)
+    sprintf(dispbuff,"%01d.%01d %01d.%01d %03d\x01%03d\x04",vcc/1000,(vcc/100)%10,v1/1000,(v1/100)%10,ic[0],r);
+  else if(ic[1]>10)
+    sprintf(dispbuff,"%01d.%01d %01d.%02d %03d %d\x03",vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100,ic[1],(int)wd);
   else{
     sprintf(dispbuff,"%01d.%01d %01d.%02d      " VER,vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100);
   }
   Serial.println(dispbuff); //把显示buff送串口
   lcd.setCursor(0, 0); //设置光标到第一行第一个字符位置
   lcd.print(dispbuff);  //显示字符串到第一行
-  if(if1<=10 && ic1<=10) {
+  if(ic[0]<=10 && ic[1]<=10) {
     lcd.setCursor(10,0);
     lcd.print(wd);
     lcd.print("\x03");
   }
   //开始准备第二行
   if(i) {
-    if( ic2!=0 | ic3!=0 | ic4!=0 | ic5 != 0 )  {
-    sprintf(dispbuff,"%03d %03d %03d %03d ",ic2,ic3,ic4,ic5);
+    if( ic[2]!=0 | ic[3]!=0 | ic[4]!=0 | ic[5] != 0 )  {
+    sprintf(dispbuff,"%03d %03d %03d %03d ",ic[2],ic[3],ic[4],ic[5]);
     lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
     lcd.print(dispbuff);   //显示buff到第二行
     }else{
@@ -884,10 +830,62 @@ return;
   }
   Serial.println(dispbuff); //输出到串口
 }
+boolean have100ma[6]={false,false,false,false,false,false},have0ma[6]={false,false,false,false,false,false};
+void proc_select() {
+switch(proc) {
+case TOFULL:
+if(ic[1]>100 & ic[1] <150) have100ma[0]=true;
+if(ic[1]==0 & have100ma[1]==true) {
+have100ma[1]=false;
+setproc(FULLTOZERO);
+b[0]=0;
+}
+break;
+case FULLTOZERO:
+if(v1>3600) {  //3.6V终止放电电压
+b[1]=0;
+have0ma[1]=false;
+setproc(ZEROTOFULL);
+}
+break;
+case ZEROTOFULL:
+if(ic[1]>100 & ic[1] <150) have100ma[1]=true;
+if(ic[1]==0 & have100ma[1]==true) {
+have100ma[1]=false;
+setproc(CHARGE);
+}
+break;
+}
+}
+void save(uint8_t sel)
+{
+sprintf(dispbuff,"%04d-%02d-%02d %04d",t.year,t.mon,t.mday,b[sel]/3600);
+for(uint8_t i1=0;i1<15;i++) EEPROM.write(100+sel*16+i1,dispbuff[i1]);
+}
+void fd() {
+for(uint8_t i1=1;i1<6;i1++) {  //只处理放电 1-5
+if(ic[i1]>100 & ic[i1]<150) have100ma[i1]=true; //经过了100ma这一道，才会在0ma时保存结果， 像电池突然拿下来，再放回去，不影响继续测试
+if(ic[i1]==0) { //结束充电
+  have0ma[i1]=true;  //到了0ma
+if(have100ma[i1]==true) {
+save(i1);  //保存结果
+have100ma[i1]=false; //下次不再保存。
+}
+}
+
+if(ic[i1]>400 & have0ma[i1]==true) { //到过0ma才会是下次测试的开始
+b[i1]=0;
+have0ma[i1]=false;
+}
+
+}
+}
+
 void loop()
 { //循环
 if(wd>wd_al) digitalWrite(11,millis()/100%2);
-
+proc_select();
+fd();
 if(keya!=getkey()) {
     keya=getkey();
     keydown();
@@ -898,8 +896,4 @@ if(keya!=getkey()) {
   ad();  
   disp();
 }
-
-
-
-
 
