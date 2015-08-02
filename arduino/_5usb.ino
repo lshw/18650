@@ -20,13 +20,6 @@
 #define V1 A6  //Vref=1.1  1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
 #endif
 
-#define CHONG1 1
-#define CHONG2 2
-#define CHONG3 3
-#define CHONG4 4
-#define CHONG5 5
-#define FANG 6
-#define DISPSE_MAX 6
 //#define SNSET  11
 //EEPROM 地址定义
 #define SN_ADDR 10  //10 11 12 13  序列号
@@ -55,35 +48,22 @@ LiquidCrystal lcd(8,7,6,5,4,3); //(RS,EN,D4,D5,D6,D7)  lcd接这6条腿
 #include <SD.h>  //sdcard 和vfat的库
 
 #define CHARGE 0
-#define TOFULL 1 //先充电到满
-#define FULLTOZERO 2 //然后放电到空 测放电容量
-#define ZEROTOFULL 3 //再充到满  测充电容量
+#define TOFULL 1 //第一步，先充电到满
+#define FULLTOZERO 2 //第二步，然后放电到空 测放电容量
+#define ZEROTOFULL 3 //第三步，再充到满  测充电容量
 uint32_t sn; //序列号
 float wd;   //实际温度值
-float wd_al; //alert 温度值
-float swd;  //adc
-struct ts t; //realtime
+float wd_al; //报警温度值
+float swd;  //芯片读出温度
+struct ts t; //时间
 float advcc,adv1,adc[6],wdin_min,wdin_max,wdout_min,wdout_max;   //各种校准数值
-uint16_t ic[6],vcc,ic5,v1,v1d,r;  //各种测试值  
-uint16_t sv1d,svcc,sic[6],sv1; 
+uint16_t ic[6],vcc,ic5,v1,v1d,r;  //各种测试值   ic[0]放电，ic[1]-ic[5]充电  vcc外部电压  v1 1号电压， v1d 1号关闭重放电的电压
+uint16_t sv1d,svcc,sic[6],sv1;   //原始10位ad值
 char dispbuff[18];  //显示缓冲区
 
-uint8_t setCount __attribute__ ((section (".noinit"))); //复位计数，用于进设置，校准等功能模块
-uint8_t proc __attribute__ ((section (".noinit")));   //当前进程
-uint32_t b[6] ;  //累计值  b[0]=放电累计  b[1] 充电1累计...
-uint8_t procxor __attribute__ ((section (".noinit")));
-uint8_t check() {
-  return proc^'L';
-}
-void calc_check() 
-{
-  procxor=check();
-}
-void setproc(uint8_t dat)
-{  //存储的校验， 因为proc重启不会清零， 所以要根据校验进行初始化。
-  proc=dat;
-  calc_check();
-}
+uint8_t setCount __attribute__ ((section (".noinit"))); //复位计数，记录第几次按动复位键，用于进设置，校准等功能模块
+uint8_t proc;   //当前进程
+uint32_t b[6] ;  //累计值  b[0]=放电累计  b[1] 充电1累计...  毫安秒
 
 //从eeprom读取一个浮点数
 float eeprom_float_read(uint16_t address) {
@@ -188,7 +168,7 @@ void ad()
   sic[4]=analogRead(IC4);
   sic[5]=analogRead(IC5);
   svcc=analogRead(VCC);
-  sv1d=analogRead(V1);
+  sv1d=analogRead(V1); 
   digitalWrite(11,HIGH);
   pinMode(A5,OUTPUT);
   if(digitalRead(A5)!=A5V) digitalWrite(A5,A5V);
@@ -206,13 +186,13 @@ void ad()
   float x=0;
   if(proc==FULLTOZERO && ic[0]>50) { //放电
     if(sv1<sv1d) {
-      x=adv1*(sv1d-sv1)/sic[0]/adc[0]-0.33; //0.33?
+      x=adv1*(sv1d-sv1)/sic[0]/adc[0]-0.33; //0.33需要校准
       r=x*1000;  
     }  
   } 
   else if(ic[1]>50) {
     if(v1d<v1) {
-      x=adv1*(sv1-sv1d)/sic[1]/adc[1]-0.33; //0.33?
+      x=adv1*(sv1-sv1d)/sic[1]/adc[1]-0.33; //0.33需要校准
       r=x*1000;  
     }
   }
@@ -234,7 +214,7 @@ void oneset()
 uint8_t bz;
 void setwd_al(){ //设置报警温度
   uint8_t key;
-  disptime();
+  disptime(); //为了取得当前的温度值
   lcd.clear();
   lcd.print("set alert \x03");
   lcd.setCursor(0,1);
@@ -254,7 +234,7 @@ void setwd_al(){ //设置报警温度
     waitKeyUp();
     lcd.setCursor(0,1);
     lcd.print(wd_al);
-    eeprom_float_write(Wd_al, wd_al);
+    eeprom_float_write(Wd_al, wd_al); //写报警温度设置值
 
   }
 }
@@ -272,13 +252,13 @@ void setwd(){
   setCount--;
 
   if(swd <6.0) {
-    lcd.print(" set zero ");
+    lcd.print(" set Low ");  //设低点校准
   }
   else{
-    lcd.print(" set High ");
+    lcd.print(" set High "); //设高点校准 高低点离得越远越好
   }
   for(;;) {
-    waitKeyDown();
+    waitKeyDown(); //等待键按下
     key=getkey();
     if(key==1) {
       wd += 0.25;
@@ -286,25 +266,16 @@ void setwd(){
     else if(key==2) {
       wd -= 0.25;
     }
-    waitKeyUp();
+    waitKeyUp();  //等待键松开
     lcd.setCursor(0,1);
     lcd.print(wd);
-    if(swd<6.0) {
+    if(swd<6.0) { //设置低点
       eeprom_float_write(Cin_min, swd);
       eeprom_float_write(Cout_min,wd);
-    }
-    else {
+    } else { //设置高点
       eeprom_float_write(Cin_max,swd);
       eeprom_float_write(Cout_max,wd);
     }
-    Serial.print("Cin_min=");
-    Serial.print(eeprom_float_read(Cin_min));
-    Serial.print(",Cout_min=");
-    Serial.print(eeprom_float_read(Cout_min));
-    Serial.print(",Cin_max=");
-    Serial.print(eeprom_float_read(Cin_max));
-    Serial.print(",Cout_max=");
-    Serial.println(eeprom_float_read(Cout_max));
   }
 }
 void setJz1() //放电1校准
@@ -352,8 +323,8 @@ void setJz() {  //校准充电2-5 ,vcc,v1
     }
   }
 }
-uint16_t a2i(uint8_t offs,uint8_t count) {
-  uint16_t val=0;
+uint16_t a2i(uint8_t offs,uint8_t count) { //count个字节的字符串转换成int16
+  uint16_t val=0; 
   for(;count>0;count--) {
     val*=10;
     val+=dispbuff[offs]&0xf;
@@ -361,25 +332,25 @@ uint16_t a2i(uint8_t offs,uint8_t count) {
   }
   return val;
 }
-uint16_t set_mv(char * name,uint16_t  val) {
+uint16_t set_mv(char * name,uint16_t  val) { //修改数字，并返回修改后的数字，
   char ch;
   ch='v';
   if(val<4000) val=4000;
   if(val>7000) val=7000;
   sprintf(dispbuff,"%s=%dmv        ",name, val);
   lcd.print(dispbuff);
-  modidisp("hhhh4000hhhhhhhh","hhhh7999hhhhhhhh");
+  modidisp("hhhh4000hhhhhhhh","hhhh7999hhhhhhhh"); //4000-7999 mv
   val=a2i(4,4);
   return val;
 }
-uint16_t set_ma(char * name,uint16_t val) {
+uint16_t set_ma(char * name,uint16_t val) {  //修改数字， 并返回修改后的数字
   char ch;
   ch='v';
   if(val<100) val=100;
   if(val>700) val=700;
   sprintf(dispbuff,"%s=%dma        ",name,val);
   lcd.print(dispbuff);
-  modidisp("hhh100hhhhhhhhhh","hhh799hhhhhhhhh"); 
+  modidisp("hhh100hhhhhhhhhh","hhh799hhhhhhhhh");   //100-799 ma
   val=a2i(3,3);
   return val;
 }
@@ -441,9 +412,11 @@ void Calibration(uint8_t adpin) {
   }
 }
 void modidisp(char * mins,char * maxs){
-  uint8_t key;
-  for(uint8_t n=0;n<16;n++){
-    if(mins[bz]=='h'){
+//利用up键和down键，修改dispbuff的内容， mins是最小值列表，maxs是最大值列表， h为不可修改，
+//比如mins="hh100hhhh"，第三位最小为1第四第五位最小为0,其他位不可修改
+  uint8_t key; 
+  for(uint8_t n=0;n<16;n++){ //跳过不可修改的部分
+    if(mins[bz]=='h'){  
       bz++;
       if(bz==16) bz=0;  
     }
@@ -451,41 +424,37 @@ void modidisp(char * mins,char * maxs){
       break;
   }
 
-  lcd.setCursor(bz,1);
-  lcd.blink();
-  waitKeyDown();
-  key=getkey();
-  Serial.print("key=");
-  Serial.println(key);
-  waitKeyUp();
-  lcd.noBlink();
-  if(key==2) {
-    bz++;
-    if(bz==16) bz=0;
+  lcd.setCursor(bz,1); //设置光标到当前位置，
+  lcd.blink();  //让当前位置煽动
+  waitKeyDown(); //等待按键
+  key=getkey();   //获取按键
+  waitKeyUp();  //等待键释放
+  lcd.noBlink(); //取消煽动
+  if(key==2) { //如果是down键 当前位置加1
+    bz++;   
+    if(bz==16) bz=0;  //LCD1602只有最多16个字符，每行
   }
-  else if(key==1){
-    if(dispbuff[bz]<=maxs[bz] & dispbuff[bz] >=mins[bz]) {
+  else if(key==1){ //如果按下up键  
+    if(dispbuff[bz]<=maxs[bz] & dispbuff[bz] >=mins[bz]) { //不超出范围的话，就加1
       dispbuff[bz]++;
       if(dispbuff[bz]>maxs[bz]) dispbuff[bz]=mins[bz];
     }
-    Serial.print("b=");
-    Serial.println(dispbuff);
   }
   if(dispbuff[bz]<mins[bz]) dispbuff[bz]=mins[bz];
   if(dispbuff[bz]>maxs[bz]) dispbuff[bz]=maxs[bz];
 
   lcd.setCursor(0, 1);  
-  lcd.print(dispbuff);
+  lcd.print(dispbuff); //更新显示
 }
 void waitKeyUp()
-{
+{ //等待键盘松开
   for(;;)  if(!getkey()) break;
 }   
 void waitKeyDown()
-{
+{ //等待键盘按下
   for(;;)  if(getkey()) break;
 }   
-void setTime(){
+void setTime(){ //设置实时时钟
   bz=0;
   lcd.print("setTime ");
   lcd.print(setCount);
@@ -548,7 +517,7 @@ void save_eeprom(){
   for(;;) ;
 }
 boolean i=false;
-void calc_sum() {
+void calc_sum() { //加当前的测量值到累加值， 被定时器每秒执行一次，b[0]-b[5]是毫安秒
   for(uint8_t i1=0;i1<6;i1++) 
   if(ic[i1]>40) b[i1]+=ic[i1];
 }
@@ -653,9 +622,9 @@ void setup()
   DS3231_clear_a1f();
   DS3231_clear_a2f();
   DS3231_set_creg(0x4);
-  if(setCount>8) setCount=0;
-  if(getkey()==1) setCount++;
-  if((DS3231_get_sreg() & 0x80) | getkey()==1) {
+  if(setCount>8) setCount=0; //按住up键，连续复位次数计数
+  if(getkey()==1) setCount++; //如果按住上键，计数就加1
+  if((DS3231_get_sreg() & 0x80) | getkey()==1) {//如果时间掉电， 直接就进时间设置
     DS3231_set_sreg(0);
     lcd.clear();
     switch(setCount) {
@@ -678,51 +647,50 @@ void setup()
       setTime();
     }
   }
-  setCount=0;
+  setCount=0;//清计数
   disptime();
   for(int a=0;a<20;a++) {
     delay(100); 
     digitalWrite(11,!digitalRead(11)); //lcd背光煽动20次
   }
-  if(check()!=procxor) {
-    proc=CHARGE;
-    calc_check();  //proc校验不过，就初始化。
-  }
-  oneset();
-  MsTimer2::set(1000, calc_sum); // 1s period
+  
+  MsTimer2::set(1000, calc_sum); // 1秒一次调用函数calc_sum进行累加ma时
   MsTimer2::start();
 }
 uint32_t dida=0,dispHoldTime=millis();
 uint8_t keya=0;
 int8_t dispse=0;
 void keydown()
-{
+{ //键盘处理，有键按下，会进来
   switch(getkey()) {
-  case 1:
+  case 1: //按的是up键
   dida=millis();
     waitKeyUp();
  if(proc==CHARGE & (millis()-dida) > 3000){
- setproc(TOFULL);
+//如果按up键的时间超过3秒， 进入测试程序。
+ proc=TOFULL;
  return;
- }
+ } 
+//如果按up键短于3秒， 就切换显示历史和当前ma时
      dispse++;
-     dispHoldTime=millis()+10000;  
+     dispHoldTime=millis()+10000;//显示历史测试mah，会显示10秒  
     break;
-  case 2:
+  case 2: 
   dida=millis();
   waitKeyUp();
-  if(proc!=CHARGE & (millis()-dida) >3000) {
-  setproc(CHARGE);
+  if(proc!=CHARGE & (millis()-dida) >3000) { //如果按下键多于3秒，就取消测试程序
+  proc=CHARGE;
   return;
   }
+//按down键短于3秒， 反向切换ma时显示
   dispse--;
-dispHoldTime=millis()+10000;  
+dispHoldTime=millis()+10000;   //显示历史测试mah，会显示10秒
   break;
   default:
   return;
 } 
-if(dispse<0) dispse=DISPSE_MAX;
-if(dispse>DISPSE_MAX) dispse=0;
+if(dispse<0) dispse=5;
+if(dispse>5) dispse=0;
 }
 
 void disptime()
@@ -731,75 +699,61 @@ void disptime()
   digitalWrite(11,HIGH);
   Wire.begin();
   DS3231_get(&t);
-  swd=DS3231_get_treg();
-  //温度校准
+  swd=DS3231_get_treg(); //芯片温度
+  //map()温度校准
   wd=(swd - wdin_min) * (wdout_max - wdout_min)/(wdin_max - wdin_min) + wdout_min;
-  wd=wd*4;
+  wd=wd*4; //缩小精度
   wd=(int)wd;
   wd=wd/4;
   sprintf(dispbuff,  "%04d-%02d-%02d %02d:%02d",t.year,
   t.mon, t.mday, t.hour, t.min);
   lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
-  lcd.print(dispbuff);   //显示buff到第二行
+  lcd.print(dispbuff);   //显示时间到第二行
 
   return;
 }
 
-void displog(char * msg,int8_t sel){
-lcd.clear();
-lcd.print(msg);
-lcd.print(":");
-if(ic[sel]>0){
-lcd.print("\x02");
-lcd.print(b[sel]/3600);
-lcd.print("mah");
-}
-lcd.setCursor(0,1);
-for(uint8_t i=0;i<16;i++) lcd.write(EEPROM.read(100+16*sel+i)); //日期 [100] 放电 ， [116] 充1 ，[132] 充2，[148] 充3 .... 
-
-}
-
-uint16_t eeprom_int16_read(uint16_t addr){
+uint16_t eeprom_int16_read(uint16_t addr){ //从eeprom读取一个int16的值
 return((uint16_t)EEPROM.read(addr)+(uint16_t)(EEPROM.read(addr+1)<<8));
 }
-void eeprom_int16_write(uint16_t addr,uint16_t dat) {
+void eeprom_int16_write(uint16_t addr,uint16_t dat) { //写一个int16到eeprom
 if(eeprom_int16_read(addr)==dat) return;
 EEPROM.write(addr,dat&0xff);
 EEPROM.write(addr+1,(dat>>8)&0xff);
 }
+
 //[100]-[109] 2015-07-01 [110]-[113] float mah, [114]-[116] uint16_t ma,
-boolean cc[6]={0,0,0,0,0,0};
-void disp() {
-  if(dispse > 0 & dispHoldTime>millis()) { 
-switch(dispse){
-case FANG:
-displog("F1",FANG);
-break;
-case CHONG1:
-displog("C1",CHONG1);
-break;
-case CHONG2:
-displog("C2",CHONG2);
-break;
-case CHONG3:
-displog("C3",CHONG3);
-break;
-case CHONG4:
-displog("C4",CHONG4);
-break;
-case CHONG5:
-displog("C5",CHONG5);
-break;
-default:
-break;
+void dispHistory() {
+  if(dispHoldTime>millis()) {
+  lcd.clear();
+if(dispse==0) 
+lcd.print("F1");
+else{
+lcd.write('C');
+lcd.print(dispse);
 }
+lcd.print(":");
+if(ic[dispse]>0){
+if(dispse==0)
+lcd.print("\x01"); //放电，下箭头
+else
+lcd.print("\x02"); //充电，上箭头
+lcd.print(b[dispse]/3600); //这是把毫安秒换算成毫安时
+lcd.print("mah");
+}
+lcd.setCursor(0,1); 
+//历史测量是字符串方式存放到eeprom中的
+for(uint8_t i1=0;i1<16;i1++) lcd.write(EEPROM.read(100+16*dispse+i1)); //日期 [100] 放电 ， [116] 充1 ，[132] 充2，[148] 充3 .... 
+   
 lcd.setCursor(15,0);
-lcd.print((dispHoldTime-millis())/1000);
+lcd.print((dispHoldTime-millis())/1000); //当前显示的倒计数， 到0退出History程序
 return;
   }
   if(ic[0]>10)
+//放电测试状态，显示Vcc,v1,放电电流, 电池内阻
     sprintf(dispbuff,"%01d.%01d %01d.%01d %03d\x01%03d\x04",vcc/1000,(vcc/100)%10,v1/1000,(v1/100)%10,ic[0],r);
   else if(ic[1]>10)
+//充电测试状态 显示vcc,v1,充电电流，温度
     sprintf(dispbuff,"%01d.%01d %01d.%02d %03d %d\x03",vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100,ic[1],(int)wd);
   else{
     sprintf(dispbuff,"%01d.%01d %01d.%02d      " VER,vcc/1000,(vcc/100)%10,v1/1000,(v1/10)%100);
@@ -835,28 +789,31 @@ return;
   }
   Serial.println(dispbuff); //输出到串口
 }
-boolean have100ma[6]={false,false,false,false,false,false},have0ma[6]={false,false,false,false,false,false};
+boolean have100ma[6]={false,false,false,false,false,false};
+boolean have0ma[6]={false,false,false,false,false,false};
 void proc_select() {
-switch(proc) {
-case TOFULL:
-if(ic[1]==0) {
+switch(proc) { 
+case TOFULL: //当前第一步，先充到满
+if(ic[1]<10) {  //充满，进入第二步
 have100ma[1]=false;
-setproc(FULLTOZERO);
-b[0]=0;
+proc=FULLTOZERO; 
+b[0]=0;  //放电量累加清零
 }
 break;
-case FULLTOZERO:
-if(v1<3600) {  //3.6V终止放电电压
-b[1]=0;
+case FULLTOZERO: //当前第二步 放电，
+if(v1<3400) {  //3.4V终止放电电压
+b[1]=0;  //清充电累加
 have0ma[1]=false;
-setproc(ZEROTOFULL);
+save(0);//保存放电电量
+proc=ZEROTOFULL;
 }
 break;
-case ZEROTOFULL:
+case ZEROTOFULL:  //当前第三步再充到满
 if(ic[1]>100 & ic[1] <150) have100ma[1]=true;
-if(ic[1]==0 & have100ma[1]==true) {
+if(ic[1]==0 & have100ma[1]==true) { //结束
+save(1);
 have100ma[1]=false;
-setproc(CHARGE);
+proc=CHARGE;
 }
 break;
 }
@@ -887,18 +844,24 @@ have0ma[i1]=false;
 
 void loop()
 { //循环
-if(wd>wd_al) digitalWrite(11,millis()/100%2);
-oneset();
-proc_select();
-fd();
+if(ic[0]<10 & ic[1]<10 & ic[5]<10 & wd>wd_al)// 温度芯片附近不在冲放电，才进行温度报警  
+  digitalWrite(11,millis()/100%2);  //背光煽动报警
 if(keya!=getkey()) {
     keya=getkey();
     keydown();
-    disp();
+    dispHistory();//显示dispse对应的值
   }
-  if(dida+1000>millis()) return; 
-  dida=millis();
-  ad();  
-  disp();
-}
+  if(dida+1000>millis()) return;  //1秒一次执行下面的程序
+  dida=millis(); 
+Serial.println(__LINE__);
+  proc_select(); //测试过程处理， 比如放完电进入第三步， 充满电进入第二步，包括写测试值到eeprom
+Serial.println(__LINE__);
+fd();  //放电过程处理， 写测试值到eeprom
+Serial.println(__LINE__);
+oneset(); //根据proc选择1号电池的当前任务，充电或者放电
+Serial.println(__LINE__);
+ad();  //测量
+Serial.println(__LINE__);
+dispHistory(); //显示dispse对应的值
+  }
 
