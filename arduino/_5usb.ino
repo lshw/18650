@@ -1,6 +1,6 @@
 #define VER "1.3"
 //ad管脚定义
-#if defined(__AVR_ATmega328P__)
+// #if defined(__AVR_ATmega328P__)
 #define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
 #define IC2 A1 //Vref R0=0.33 充电2
 #define IC3 A0 //Vref R0=0.33 充电3
@@ -9,16 +9,6 @@
 #define IF1 A3 //Vref R0=0.33 放电1
 #define VCC A2 //Vref=1.1  1.1*VCC/1024/24.3*(24.3+499); //外接电源电压
 #define V1 A6  //Vref=1.1  1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
-#else //atmega32u4
-#define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
-#define IC2 A1 //Vref R0=0.33 充电2
-#define IC3 A0 //Vref R0=0.33 充电3
-#define IC4 A7 //Vref R0=0.33 充电4
-#define IC5 A5 //Vref R0=0.33 充电5
-#define IF1 A3 //Vref R0=0.33 放电1
-#define VCC A2 //Vref=1.1  1.1*VCC/1024/24.3*(24.3+499); //外接电源电压
-#define V1 A6  //Vref=1.1  1.1*V1/1024/97.6*(97.6+499)  //1号电池电压  
-#endif
 
 //#define SNSET  11
 //EEPROM 地址定义
@@ -344,12 +334,18 @@ uint16_t set_mv(char * name,uint16_t  val) { //修改数字，并返回修改后
   val=a2i(4,4);
   return val;
 }
-uint16_t set_ma(char * name,uint16_t val) {  //修改数字， 并返回修改后的数字
+uint16_t set_ma(uint8_t offs) {  //修改数字， 并返回修改后的数字
   char ch;
+  uint16_t val=ic[offs];
   ch='v';
+
   if(val<100) val=100;
   if(val>700) val=700;
-  sprintf(dispbuff,"%s=%dma        ",name,val);
+  sprintf(dispbuff,"C%d=%dma        ",offs,ic[offs]);
+  if(offs==0) {
+  dispbuff[0]='F';
+  dispbuff[1]='1';
+  }
   lcd.print(dispbuff);
   modidisp("hhh100hhhhhhhhhh","hhh799hhhhhhhhh");   //100-799 ma
   val=a2i(3,3);
@@ -357,6 +353,7 @@ uint16_t set_ma(char * name,uint16_t val) {  //修改数字， 并返回修改�
 }
 void Calibration(uint8_t adpin) {
   float val;
+  uint8_t offs=0;
   bz=0;
   lcd.setCursor(0,1);
   for(;;){
@@ -373,41 +370,21 @@ void Calibration(uint8_t adpin) {
       adv1=val/sv1;
       eeprom_float_write(ADv1,adv1);
       break;
-    case IF1:
-      ic[0]=set_ma("F1",ic[0]);
-      val=ic[0];
-      adc[0]=val/sic[0];
-      eeprom_float_write(ADf,adc[0]);
-      break;
-    case IC1: 
-      ic[1]=set_ma("C1",ic[1]);
-      val=ic[1];
-      adc[1]=val/sic[1];
-      eeprom_float_write(ADc1,adc[1]);
-      break;
-    case IC2:
-      ic[2]=set_ma("C2",ic[2]);
-      val=ic[2];
-      adc[2]=val/sic[2];
-      eeprom_float_write(ADc2,adc[2]);
-      break;
-    case IC3:
-      ic[3]=set_ma("C3",ic[3]);
-      val=ic[3];
-      adc[3]=val/sic[3];
-      eeprom_float_write(ADc3,adc[3]);
-      break;
-    case IC4:
-      ic[4]=set_ma("C4",ic[4]);
-      val=ic[4];
-      adc[4]=val/sic[4];
-      eeprom_float_write(ADc4,adc[4]);
-      break;
-    case IC5:
-      ic[5]=set_ma("C5",ic[5]);
-      val=ic[5];
-      adc[5]=val/sic[5];
-      eeprom_float_write(ADc5,adc[5]);
+      case IC5: //offs=5 
+      offs++;  
+      case IC4: //offs=4
+      offs++;
+      case IC3: //offs=3
+      offs++;
+      case IC2: //offs=2
+      offs++;
+      case IC1: //offs=1
+      offs++;
+      case IF1: //offs=0
+      ic[offs]=set_ma(offs);
+      val=ic[offs];
+      adc[offs]=val/sic[offs];
+      eeprom_float_write(ADf+4*offs,adc[offs]);
       break;
     }
   }
@@ -416,7 +393,7 @@ void modidisp(char * mins,char * maxs){
   //利用up键和down键，修改dispbuff的内容， mins是最小值列表，maxs是最大值列表， h为不可修改，
   //比如mins="hh100hhhh"，第三位最小为1第四第五位最小为0,其他位不可修改
   uint8_t key; 
-  for(uint8_t n=0;n<16;n++){ //跳过不可修改的部分
+  for(uint8_t i1=0;i1<16;i1++){ //跳过不可修改的部分
     if(mins[bz]=='h'){  
       bz++;
       if(bz==16) bz=0;  
@@ -825,20 +802,29 @@ void proc_select() {
 void save(uint8_t sel)
 {
   sprintf(dispbuff,"%04d-%02d-%02d %04d",t.year,t.mon,t.mday,b[sel]/3600);
-  for(uint8_t i1=0;i1<15;i++) EEPROM.write(100+sel*16+i1,dispbuff[i1]);
-}
+  Serial.println(__LINE__);
+  for(uint8_t i1=0;i1<15;i1++) EEPROM.write(100+sel*16+i1,dispbuff[i1]);
+ Serial.println(__LINE__);
+ }
 void fd() {
   for(uint8_t i1=1;i1<6;i1++) {  //只处理放电 1-5
+  Serial.println(__LINE__);
     if(ic[i1]>100 & ic[i1]<150) have100ma[i1]=true; //经过了100ma这一道，才会在0ma时保存结果， 像电池突然拿下来，再放回去，不影响继续测试
     if(ic[i1]==0) { //结束充电
+  Serial.println(__LINE__);
       have0ma[i1]=true;  //到了0ma
       if(have100ma[i1]==true) {
+  Serial.println(__LINE__);
         save(i1);  //保存结果
+  Serial.println(__LINE__);
         have100ma[i1]=false; //下次不再保存。
       }
+  Serial.println(__LINE__);
     }
-
+ Serial.println(__LINE__);
+ 
     if(ic[i1]>400 & have0ma[i1]==true) { //到过0ma才会是下次测试的开始
+  Serial.println(__LINE__);
       b[i1]=0;
       have0ma[i1]=false;
     }
@@ -856,15 +842,10 @@ void loop()
   }
   if(dida+1000>millis()) return;  //1秒一次执行下面的程序
   dida=millis(); 
-  Serial.println(__LINE__);
   proc_select(); //测试过程处理， 比如放完电进入第三步， 充满电进入第二步，包括写测试值到eepromu
-  Serial.println(__LINE__);
   fd();  //放电过程处理， 写测试值到eeprom
-  Serial.println(__LINE__);
   oneset(); //根据proc选择1号电池的当前任务，充电或者放电
-  Serial.println(__LINE__);
   ad();  //测量
-  Serial.println(__LINE__);
   dispHistory(); //显示dispse对应的值
 }
 
