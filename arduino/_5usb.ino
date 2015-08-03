@@ -802,29 +802,20 @@ void proc_select() {
 void save(uint8_t sel)
 {
   sprintf(dispbuff,"%04d-%02d-%02d %04d",t.year,t.mon,t.mday,b[sel]/3600);
-  Serial.println(__LINE__);
   for(uint8_t i1=0;i1<15;i1++) EEPROM.write(100+sel*16+i1,dispbuff[i1]);
- Serial.println(__LINE__);
  }
 void fd() {
   for(uint8_t i1=1;i1<6;i1++) {  //只处理放电 1-5
-  Serial.println(__LINE__);
     if(ic[i1]>100 & ic[i1]<150) have100ma[i1]=true; //经过了100ma这一道，才会在0ma时保存结果， 像电池突然拿下来，再放回去，不影响继续测试
     if(ic[i1]==0) { //结束充电
-  Serial.println(__LINE__);
       have0ma[i1]=true;  //到了0ma
       if(have100ma[i1]==true) {
-  Serial.println(__LINE__);
         save(i1);  //保存结果
-  Serial.println(__LINE__);
         have100ma[i1]=false; //下次不再保存。
       }
-  Serial.println(__LINE__);
     }
- Serial.println(__LINE__);
  
     if(ic[i1]>400 & have0ma[i1]==true) { //到过0ma才会是下次测试的开始
-  Serial.println(__LINE__);
       b[i1]=0;
       have0ma[i1]=false;
     }
