@@ -19,11 +19,11 @@
 #define Cin_max  19 //19 20 21 22
 #define Cout_max 23 //23 24 25 26
 #define ADf   27 //27,28,29,30     放电
-#define ADc1  31 //31,32,33,34     充电1
-#define ADc2  35 //35,36,37,38     充电2
-#define ADc3  39 //39,40,41,42     充电3
-#define ADc4  43 //43,44,45,46     充电4
-#define ADc5  47 //47,48,49,50     充电5
+//#define ADc1  31 //31,32,33,34     充电1
+//#define ADc2  35 //35,36,37,38     充电2
+//#define ADc3  39 //39,40,41,42     充电3
+//#define ADc4  43 //43,44,45,46     充电4
+//#define ADc5  47 //47,48,49,50     充电5
 #define ADvcc 51 //51,52,53,54     Vcc
 #define ADv1  55 //55,56,57,58     v1
 //100 ... 164  //mah   
@@ -563,13 +563,31 @@ void setup()
   sn+=EEPROM.read(SN_ADDR + 1) << 8;
   sn+=EEPROM.read(SN_ADDR);
 
+  
+  const float ivcc=1.1*1000*(24.3+499)/24.3/1024; //23.133278   0.1mv
+  const float iv1=1.1*1000*(97.6+499)/97.6/1024; //6.56638 0.1mv
+  const float ii=1.1*1000/(0.33)/1024;//3.255 ma   0.1ma
+
+  if(EEPROM.read(100)!='2' | EEPROM.read(101)!='0') {
+  for(uint8_t i1=2;i1<6*16;i1++) EEPROM.write(100+i1,' ');
+  EEPROM.write(100,'2');
+  EEPROM.write(101,'0');
+  EEPROM.write(102,'1');
+  EEPROM.write(103,'5');
+
   //载入校准值
-  adc[0]=eeprom_float_read(ADf);  //放电ad
-  adc[1]=eeprom_float_read(ADc1); //充电1ad
-  adc[2]=eeprom_float_read(ADc2);  //充电2ad
-  adc[3]=eeprom_float_read(ADc3);  //充电3ad
-  adc[4]=eeprom_float_read(ADc4);  //充电4ad
-  adc[5]=eeprom_float_read(ADc5);  //充电5ad
+  eeprom_float_write(Wd_al,29.0);
+  eeprom_float_write(Cin_min,0.0);
+  eeprom_float_write(Cout_min,0.0);
+  eeprom_float_write(Cin_max,30.0);
+  eeprom_float_write(Cout_max,30.0);
+  for(uint8_t i1=0;i1<6;i1++)
+    eeprom_float_write(ADf+i1*4,ii);
+  eeprom_float_write(ADvcc,ivcc);
+  eeprom_float_write(ADv1,iv1);
+  }
+  for(uint8_t i1=0;i1<6;i1++)
+  adc[i1]=eeprom_float_read(ADf+4&i1);  //放电ad
   advcc=eeprom_float_read(ADvcc);
   adv1=eeprom_float_read(ADv1);
   wd_al=eeprom_float_read(Wd_al);   //alert 温度
@@ -627,7 +645,7 @@ void setup()
   }
   setCount=0;//清计数
   disptime();
-  for(int a=0;a<20;a++) {
+  for(uint8_t i1=0;i1<20;i1++) {
     delay(100); 
     digitalWrite(11,!digitalRead(11)); //lcd背光煽动20次
   }
