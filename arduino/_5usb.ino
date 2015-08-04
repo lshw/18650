@@ -596,9 +596,7 @@ void setup()
   wdin_max=eeprom_float_read(Cin_max);     //Cout_max温度对应的 AD值
   wdout_min=eeprom_float_read(Cout_min);       //温度线性校准，一个点在0度， 另一个点取某气温。
   wdout_max=eeprom_float_read(Cout_max);   //某温度
-  char hello[]="Cfido!V" VER " ";
   Serial.begin(9600); //串口9600
-  Serial.println(hello);
   //sdSave("hhhhhh");
   analogReference(INTERNAL); //使用atmega328的内部1.1V 基准源
   analogRead(A0); //第一次转换不准确， 要用掉
@@ -607,11 +605,12 @@ void setup()
   lcd.createChar(1, downchar); //V
   lcd.createChar(3, wdchar);  //sheshidu
   lcd.createChar(4, oumchar);   //om
-  lcd.createChar(5, machar);  //ma  
+  //lcd.createChar(5, machar);  //ma  
   lcd.clear();
-  lcd.print(hello); 
-  lcd.print("SN=");
+  lcd.print("Cfido!V" VER " SN="); 
   lcd.print(sn);
+  lcd.setCursor(0,1);
+  lcd.print("18650.cfido.com");
   pinMode(11,OUTPUT);
   digitalWrite(11,HIGH);
   Wire.begin();
