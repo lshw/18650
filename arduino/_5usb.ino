@@ -1,4 +1,4 @@
-#define VER "1.3"
+#define VER "1.4"
 //ad管脚定义
 // #if defined(__AVR_ATmega328P__)
 #define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
@@ -343,8 +343,8 @@ uint16_t set_ma(uint8_t offs) {  //修改数字， 并返回修改后的数字
   if(val>700) val=700;
   sprintf(dispbuff,"C%d=%dma        ",offs,ic[offs]);
   if(offs==0) {
-  dispbuff[0]='F';
-  dispbuff[1]='1';
+    dispbuff[0]='F';
+    dispbuff[1]='1';
   }
   lcd.print(dispbuff);
   modidisp("hhh100hhhhhhhhhh","hhh799hhhhhhhhh");   //100-799 ma
@@ -370,17 +370,17 @@ void Calibration(uint8_t adpin) {
       adv1=val/sv1;
       eeprom_float_write(ADv1,adv1);
       break;
-      case IC5: //offs=5 
+    case IC5: //offs=5 
       offs++;  
-      case IC4: //offs=4
+    case IC4: //offs=4
       offs++;
-      case IC3: //offs=3
+    case IC3: //offs=3
       offs++;
-      case IC2: //offs=2
+    case IC2: //offs=2
       offs++;
-      case IC1: //offs=1
+    case IC1: //offs=1
       offs++;
-      case IF1: //offs=0
+    case IF1: //offs=0
       ic[offs]=set_ma(offs);
       val=ic[offs];
       adc[offs]=val/sic[offs];
@@ -563,31 +563,32 @@ void setup()
   sn+=EEPROM.read(SN_ADDR + 1) << 8;
   sn+=EEPROM.read(SN_ADDR);
 
-  
+
   const float ivcc=1.1*1000*(24.3+499)/24.3/1024; //23.133278   0.1mv
   const float iv1=1.1*1000*(97.6+499)/97.6/1024; //6.56638 0.1mv
   const float ii=1.1*1000/(0.33)/1024;//3.255 ma   0.1ma
 
   if(EEPROM.read(100)!='2' | EEPROM.read(101)!='0') {
-  for(uint8_t i1=2;i1<6*16;i1++) EEPROM.write(100+i1,' ');
-  EEPROM.write(100,'2');
-  EEPROM.write(101,'0');
-  EEPROM.write(102,'1');
-  EEPROM.write(103,'5');
+    for(uint8_t i1=2;i1<6*16;i1++) EEPROM.write(100+i1,' ');
+    EEPROM.write(100,'2');
+    EEPROM.write(101,'0');
+    EEPROM.write(102,'1');
+    EEPROM.write(103,'5');
 
-  //载入校准值
-  eeprom_float_write(Wd_al,29.0);
-  eeprom_float_write(Cin_min,0.0);
-  eeprom_float_write(Cout_min,0.0);
-  eeprom_float_write(Cin_max,30.0);
-  eeprom_float_write(Cout_max,30.0);
-  for(uint8_t i1=0;i1<6;i1++)
-    eeprom_float_write(ADf+i1*4,ii);
-  eeprom_float_write(ADvcc,ivcc);
-  eeprom_float_write(ADv1,iv1);
+    //载入校准值
+    eeprom_float_write(Wd_al,29.0);
+    eeprom_float_write(Cin_min,0.0);
+    eeprom_float_write(Cout_min,0.0);
+    eeprom_float_write(Cin_max,30.0);
+    eeprom_float_write(Cout_max,30.0);
+    for(uint8_t i1=0;i1<6;i1++)
+      eeprom_float_write(ADf+i1*4,ii);
+    eeprom_float_write(ADvcc,ivcc);
+    eeprom_float_write(ADv1,iv1);
   }
-  for(uint8_t i1=0;i1<6;i1++)
-  adc[i1]=eeprom_float_read(ADf+4&i1);  //放电ad
+  uint8_t i1;
+  for(i1=0;i1<6;i1++)
+    adc[i1]=eeprom_float_read(ADf+4&i1);  //放电ad
   advcc=eeprom_float_read(ADvcc);
   adv1=eeprom_float_read(ADv1);
   wd_al=eeprom_float_read(Wd_al);   //alert 温度
@@ -649,7 +650,14 @@ void setup()
     delay(100); 
     digitalWrite(11,!digitalRead(11)); //lcd背光煽动20次
   }
-
+  i1=proc;
+  proc=FULLTOZERO;
+  ad();
+  proc=i1;
+  lcd.setCursor(0,1);
+  lcd.print("R1=");
+  lcd.print(r);
+  lcd.print("m\x04  ");
   MsTimer2::set(1000, calc_sum); // 1秒一次调用函数calc_sum进行累加ma时
   MsTimer2::start();
 }
@@ -821,7 +829,7 @@ void save(uint8_t sel)
 {
   sprintf(dispbuff,"%04d-%02d-%02d %04d",t.year,t.mon,t.mday,b[sel]/3600);
   for(uint8_t i1=0;i1<15;i1++) EEPROM.write(100+sel*16+i1,dispbuff[i1]);
- }
+}
 void fd() {
   for(uint8_t i1=1;i1<6;i1++) {  //只处理放电 1-5
     if(ic[i1]>100 & ic[i1]<150) have100ma[i1]=true; //经过了100ma这一道，才会在0ma时保存结果， 像电池突然拿下来，再放回去，不影响继续测试
@@ -832,7 +840,7 @@ void fd() {
         have100ma[i1]=false; //下次不再保存。
       }
     }
- 
+
     if(ic[i1]>400 & have0ma[i1]==true) { //到过0ma才会是下次测试的开始
       b[i1]=0;
       have0ma[i1]=false;
@@ -857,5 +865,6 @@ void loop()
   ad();  //测量
   dispHistory(); //显示dispse对应的值
 }
+
 
 
