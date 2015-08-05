@@ -150,8 +150,9 @@ void ad()
   sic[0]=analogRead(IF1);
   sv1=analogRead(V1);
   sic[1]=analogRead(IC1);  
-  disable();
+  if(sic[0]>10 || sic[1]>10){ disable();
   delay(1); //!
+  }
   sic[2]=analogRead(IC2);
   sic[3]=analogRead(IC3);
   sic[4]=analogRead(IC4);
