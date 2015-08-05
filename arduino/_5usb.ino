@@ -40,7 +40,6 @@ LiquidCrystal lcd(8,7,6,5,4,3); //(RS,EN,D4,D5,D6,D7)  lcd接这6条腿
 #define CHARGE 0
 #define TOFULL 1 //第一步，先充电到满
 #define FULLTOZERO 2 //第二步，然后放电到空 测放电容量
-#define ZEROTOFULL 3 //第三步，再充到满  测充电容量
 uint32_t sn; //序列号
 float wd;   //实际温度值
 float wd_al; //报警温度值
@@ -193,7 +192,6 @@ void oneset()
   switch(proc) {
   case CHARGE:
   case TOFULL:
-  case ZEROTOFULL:
     charge();
     break;
   case FULLTOZERO:
@@ -324,24 +322,19 @@ uint16_t a2i(uint8_t offs,uint8_t count) { //count个字节的字符串转换成
   return val;
 }
 uint16_t set_mv(char * name,uint16_t  val) { //修改数字，并返回修改后的数字，
-  char ch;
-  ch='v';
   if(val<4000) val=4000;
   if(val>7000) val=7000;
-  sprintf(dispbuff,"%s=%dmv        ",name, val);
+  sprintf(dispbuff,"%s=%04dmv        ",name, val);
   lcd.print(dispbuff);
   modidisp("hhhh4000hhhhhhhh","hhhh7999hhhhhhhh"); //4000-7999 mv
   val=a2i(4,4);
   return val;
 }
 uint16_t set_ma(uint8_t offs) {  //修改数字， 并返回修改后的数字
-  char ch;
   uint16_t val=ic[offs];
-  ch='v';
-
   if(val<100) val=100;
   if(val>700) val=700;
-  sprintf(dispbuff,"C%d=%dma        ",offs,ic[offs]);
+  sprintf(dispbuff,"C%d=%03dma        ",offs,val);
   if(offs==0) {
     dispbuff[0]='F';
     dispbuff[1]='1';
@@ -413,13 +406,13 @@ void modidisp(char * mins,char * maxs){
     if(bz==16) bz=0;  //LCD1602只有最多16个字符，每行
   }
   else if(key==1){ //如果按下up键  
-    if(dispbuff[bz]<=maxs[bz] & dispbuff[bz] >=mins[bz]) { //不超出范围的话，就加1
+    if(dispbuff[bz]<=maxs[bz] && dispbuff[bz] >=mins[bz]) { //不超出范围的话，就加1
       dispbuff[bz]++;
       if(dispbuff[bz]>maxs[bz]) dispbuff[bz]=mins[bz];
     }
   }
-  if(dispbuff[bz]<mins[bz]) dispbuff[bz]=mins[bz];
-  if(dispbuff[bz]>maxs[bz]) dispbuff[bz]=maxs[bz];
+  if(dispbuff[bz] < mins[bz]) dispbuff[bz]=mins[bz];
+  if(dispbuff[bz] > maxs[bz]) dispbuff[bz]=maxs[bz];
 
   lcd.setCursor(0, 1);  
   lcd.print(dispbuff); //更新显示
@@ -456,9 +449,9 @@ void setTime(){ //设置实时时钟
     if(t.mday==0) t.mday=1;
     if(t.mday>31)  t.mday=30;
     if(t.hour>59) t.hour=50;
-    if(t.mon>12 | t.mon==0) t.mon=10;
+    if(t.mon>12 || t.mon==0) t.mon=10;
     if(t.mon==2 && t.mday>29) t.mday=20;
-    if(t.mon==4 | t.mon==6 |t.mon==9 | t.mon==11) 
+    if(t.mon==4 || t.mon==6 || t.mon==9 || t.mon==11) 
       if(t.mday>30) t.mday=30;
     Wire.begin();
     DS3231_init(DS3231_INTCN);
@@ -568,7 +561,7 @@ void setup()
   const float iv1=1.1*1000*(97.6+499)/97.6/1024; //6.56638 0.1mv
   const float ii=1.1*1000/(0.33)/1024;//3.255 ma   0.1ma
 
-  if(EEPROM.read(100)!='2' | EEPROM.read(101)!='0') {
+  if(EEPROM.read(100)!='2' || EEPROM.read(101)!='0') {
     for(uint8_t i1=2;i1<6*16;i1++) EEPROM.write(100+i1,' ');
     EEPROM.write(100,'2');
     EEPROM.write(101,'0');
@@ -576,16 +569,18 @@ void setup()
     EEPROM.write(103,'5');
 
     //载入校准值
-    eeprom_float_write(Wd_al,29.0);
+    eeprom_float_write(Wd_al,32.0);
     eeprom_float_write(Cin_min,0.0);
     eeprom_float_write(Cout_min,0.0);
     eeprom_float_write(Cin_max,30.0);
     eeprom_float_write(Cout_max,30.0);
+    /*
     for(uint8_t i1=0;i1<6;i1++)
       eeprom_float_write(ADf+i1*4,ii);
     eeprom_float_write(ADvcc,ivcc);
     eeprom_float_write(ADv1,iv1);
-  }
+*/  
+}
   uint8_t i1;
   for(i1=0;i1<6;i1++)
     adc[i1]=eeprom_float_read(ADf+4&i1);  //放电ad
@@ -607,8 +602,11 @@ void setup()
   lcd.createChar(4, oumchar);   //om
   //lcd.createChar(5, machar);  //ma  
   lcd.clear();
-  lcd.print("Cfido!V" VER " SN="); 
+  lcd.print("Hello! ");
+  if(sn<10) lcd.print("0");
+  if(sn<100) lcd.print("0");
   lcd.print(sn);
+  lcd.print(" V" VER ); 
   lcd.setCursor(0,1);
   lcd.print("18650.cfido.com");
   pinMode(11,OUTPUT);
@@ -644,19 +642,23 @@ void setup()
     }
   }
   setCount=0;//清计数
-  disptime();
+  
   for(uint8_t i1=0;i1<20;i1++) {
     delay(100); 
     digitalWrite(11,!digitalRead(11)); //lcd背光煽动20次
   }
-  i1=proc;
-  proc=FULLTOZERO;
+  Discharge();
+  delay(10);
   ad();
-  proc=i1;
-  lcd.setCursor(0,1);
+  lcd.setCursor(0,0);
   lcd.print("R1=");
   lcd.print(r);
-  lcd.print("m\x04  ");
+  lcd.print("\x04           ");
+  disptime();
+  for(i1=0;i1<10;i1++) {
+  if(getkey()) break;
+  delay(200);   //delay 2s or keydown
+  }
   MsTimer2::set(1000, calc_sum); // 1秒一次调用函数calc_sum进行累加ma时
   MsTimer2::start();
 }
@@ -764,7 +766,7 @@ void dispHistory() {
   if(i==true & proc != 0) {
     dispbuff[0]=proc|0x30;
     dispbuff[1]='/';
-    dispbuff[2]='3';
+    dispbuff[2]='2';
   }
   Serial.println(dispbuff); //把显示buff送串口
   lcd.setCursor(0, 0); //设置光标到第一行第一个字符位置
@@ -811,14 +813,6 @@ void proc_select() {
       b[1]=0;  //清充电累加
       have0ma[1]=false;
       save(0);//保存放电电量
-      proc=ZEROTOFULL;
-    }
-    break;
-  case ZEROTOFULL:  //当前第三步再充到满
-    if(ic[1]>100 & ic[1] <150) have100ma[1]=true;
-    if(ic[1]==0 & have100ma[1]==true) { //结束
-      save(1);
-      have100ma[1]=false;
       proc=CHARGE;
     }
     break;
