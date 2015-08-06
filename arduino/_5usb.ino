@@ -384,7 +384,7 @@ void Calibration(uint8_t adpin) {
       ic[offs]=set_ma(offs);
       val=ic[offs];
       adc[offs]=val/sic[offs];
-
+      eeprom_float_write(ADf+4*offs,adc[offs]);
       break;
     }
   }
@@ -651,12 +651,6 @@ void setup()
   Discharge();
   delay(10);
   ad();
-  Serial.print("v1=");
-  Serial.print(v1);
-  Serial.print(",v1d=");
-  Serial.print(v1d);
-  Serial.print(",if1=");
-  Serial.println(ic[0]);
   lcd.setCursor(0,0);
   lcd.print("R1=");
   lcd.print(r);
@@ -864,3 +858,4 @@ void loop()
   ad();  //测量
   dispHistory(); //显示dispse对应的值
 }
+
