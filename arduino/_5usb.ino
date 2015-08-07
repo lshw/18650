@@ -29,6 +29,7 @@
 //100 ... 164  //mah   
 
 #include <MsTimer2.h>
+#include <avr/sleep.h>
 #include<stdlib.h>
 #include <LiquidCrystal.h>   //LCD1602a 驱动
 LiquidCrystal lcd(8,7,6,5,4,3); //(RS,EN,D4,D5,D6,D7)  lcd接这6条腿
@@ -581,7 +582,6 @@ void setup()
       eeprom_float_write(ADf+i1*4,1.1*1000/0.33/1024); //3.255ma
     eeprom_float_write(ADvcc,1.1*1000*(24.3+499)/24.3/1024);  //23.133278mv 
     eeprom_float_write(ADv1,1.1*1000*(97.6+499)/97.6/1024); //6.56638mv
-
   }
   uint8_t i1;
   for(i1=0;i1<6;i1++)
@@ -593,6 +593,7 @@ void setup()
   wdin_max=eeprom_float_read(Cin_max);     //Cout_max温度对应的 AD值
   wdout_min=eeprom_float_read(Cout_min);       //温度线性校准，一个点在0度， 另一个点取某气温。
   wdout_max=eeprom_float_read(Cout_max);   //某温度
+  ACSR &=B10111111; //ACBG=0 模拟比较器禁用
   Serial.begin(9600); //串口9600
   //sdSave("hhhhhh");
   analogReference(INTERNAL); //使用atmega328的内部1.1V 基准源
@@ -679,7 +680,7 @@ boolean keydown()
     } 
     //如果按up键短于3秒， 就切换显示历史和当前ma时
     dispse++;
-    dispHoldTime=millis()+10000;//显示历史测试mah，会显示10秒
+    dispHoldTime=millis()+10000;//显示历史测试mah，会显示10秒  //2mhz /8
     //    dispHistory();//显示dispse对应的值
     break;
   case 2: 
@@ -691,7 +692,7 @@ boolean keydown()
     }
     //按down键短于3秒， 反向切换ma时显示
     dispse--;
-    dispHoldTime=millis()+10000;   //显示历史测试mah，会显示10秒
+    dispHoldTime=millis()+10000;   //显示历史测试mah，会显示10秒 2mhz /8
     //    dispHistory();//显示dispse对应的值
     break;
   default:
@@ -754,7 +755,7 @@ void dispHistory() {
     for(uint8_t i1=0;i1<16;i1++) lcd.write(EEPROM.read(100+16*dispse+i1)); //日期 [100] 放电 ， [116] 充1 ，[132] 充2，[148] 充3 .... 
 
     lcd.setCursor(15,0);
-    lcd.print((dispHoldTime-millis())/1000); //当前显示的倒计数， 到0退出History程序
+    lcd.print((dispHoldTime-millis())/1000); //当前显示的倒计数， 到0退出History程序 2mhz /8
     return;
   }
   if(ic[0]>10)
@@ -843,6 +844,29 @@ void fd() {
     }
   }
 }
+void sleep_ms(uint32_t ms)
+{
+  unsigned long start ;
+  start= millis()+ms;
+  set_sleep_mode(SLEEP_MODE_IDLE);
+/*
+cli();
+  CLKPR =B10000000;
+CLKPR = B00000011;   //调频率16Mhz到2Mhz  则速率延迟都要/8
+sei();
+*/
+  while (millis() < start){
+    sleep_enable();
+    sleep_cpu();  //enter sleep mode
+    sleep_disable();
+  }
+  /*
+cli();
+CLKPR =B10000000;
+CLKPR = B00000000;   //调频率2Mhz到16Mhz  则速率延迟都要/8
+sei();
+*/
+}
 
 void loop()
 { //循环
@@ -850,7 +874,11 @@ void loop()
     digitalWrite(11,millis()/100%2);  //背光煽动报警
   if(keydown() && dispHoldTime>millis())
     dispHistory();
-  if(dida+1000>millis()) return;  //1秒一次执行下面的程序
+  if(dida+1000>millis()) {
+sleep_ms(50);
+    return;  //1秒一次执行下面的程序
+  }
+  Serial.println(CLKPR,HEX);
   dida=millis(); 
   proc_select(); //测试过程处理， 充满电进入第二步，包括写测试值到eeprom
   fd();  //放电过程处理， 写测试值到eeprom
