@@ -1,4 +1,6 @@
-#define VER "1.4"
+#define VER "1.6"
+//#define HAVE_CALIBRATION 1 //有这个后才会有电压电流校准功能，
+
 //ad管脚定义
 // #if defined(__AVR_ATmega328P__)
 #define IC1 A4 //Vref R0=0.33 充电1 内置基准电压1.1V 采样电阻0.33欧姆  满量程3.33A分辨率3.255208ma
@@ -115,6 +117,8 @@ void disable()
   pinMode(2,OUTPUT);
   digitalWrite(2,LOW);   //pin2 拉低
 }
+
+uint32_t la=900000;  //15分钟熄灭背光可以节省大约1.7ma电流
 uint8_t getkey()
 { //获取键盘值，返回  1=a摁下，2=b摁下，3=ab都摁下
   uint8_t ret=0;
@@ -134,15 +138,17 @@ uint8_t getkey()
   digitalWrite(10,sso);
   digitalWrite(12,miso);
   digitalWrite(13,scko);
-  if(millis()<4000) return ret;
+  if(ret!=0)   //有摁键就15分钟内亮背光
+  laon();
   return ret;
 }
 
 void ad()
 {
   float val;  //存放中间结果
-  boolean A5V;
+  boolean A5V,O11;
   A5V=digitalRead(A5); //保存A5的值
+  O11=digitalRead(O11);
   pinMode(A5,INPUT);
   digitalWrite(A5,LOW);  
   digitalWrite(A4,LOW);
@@ -161,7 +167,7 @@ void ad()
   sic[5]=analogRead(IC5);
   svcc=analogRead(VCC);
   sv1d=analogRead(V1); 
-  digitalWrite(11,HIGH);
+  digitalWrite(11,O11);
   pinMode(A5,OUTPUT);
   if(digitalRead(A5)!=A5V) digitalWrite(A5,A5V);
   oneset();
@@ -188,8 +194,11 @@ void ad()
       r=x*1000;  
     }
   }
+  if(vcc>4000) laon();  //外接电源大于4V ，背光常亮
 }
-
+void laon() {
+  la=millis()+900000; //背光亮15min  
+}
 void oneset()
 { //根据当前进程，设置充电/放电状态
   switch(proc) {
@@ -631,6 +640,7 @@ void setup()
     case 4:
       setwd_al(); //设置报警温度
       break;
+#ifdef HAVE_CALIBRATION  //如果没有定义这个宏，下面的校准程序就没了
     case 5:
       setJz();  //校准充电1-5,Vcc
       break;
@@ -640,6 +650,7 @@ void setup()
     case 7:
       setJz2();  //校准V1
       break;
+#endif
     default:
       setTime();
     }
@@ -661,6 +672,7 @@ void setup()
     if(getkey()) break;
     delay(200);   //delay 2s or keydown
   }
+  laon();
   MsTimer2::set(1000, calc_sum); // 1秒一次调用函数calc_sum进行累加ma时
   MsTimer2::start();
 }
@@ -702,14 +714,21 @@ boolean keydown()
   if(dispse>5) dispse=0;
   return true;
 }
-
+uint8_t delay60=30; //无背光的情况下，每60秒读取一次时钟，因为读取时钟时背光会瞬间点亮一下。
 void disptime()
 {
+  boolean O11;
+  if(delay60>0) delay60--;
+  if(la>millis() | delay60==0) {
+    delay60=30;
   pinMode(11,OUTPUT);
+  O11=digitalRead(11);
   digitalWrite(11,HIGH);
   Wire.begin();
   DS3231_get(&t);
   swd=DS3231_get_treg(); //芯片温度
+  digitalWrite(11,O11);
+  }
   //map()温度校准
   wd=(swd - wdin_min) * (wdout_max - wdout_min)/(wdin_max - wdin_min) + wdout_min;
   wd=wd*4; //缩小精度
@@ -867,10 +886,13 @@ CLKPR = B00000000;   //调频率2Mhz到16Mhz  则速率延迟都要/8
 sei();
 */
 }
-
 void loop()
 { //循环
-  if(ic[0]<10 & ic[1]<10 & ic[5]<10 & wd>wd_al)// 温度芯片附近不在冲放电，才进行温度报警  
+
+if(la<millis()) digitalWrite(11,LOW); //背光关闭 15min
+else digitalWrite(11,HIGH);  //背光开
+
+if(ic[0]<10 & ic[1]<10 & ic[5]<10 & wd>wd_al)// 温度芯片附近不在冲放电，才进行温度报警  
     digitalWrite(11,millis()/100%2);  //背光煽动报警
   if(keydown() && dispHoldTime>millis())
     dispHistory();
