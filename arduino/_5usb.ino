@@ -32,7 +32,7 @@
 
 #include <MsTimer2.h>
 #include <avr/sleep.h>
-#include<stdlib.h>
+//#include<stdlib.h>
 #include <LiquidCrystal.h>   //LCD1602a 驱动
 LiquidCrystal lcd(8,7,6,5,4,3); //(RS,EN,D4,D5,D6,D7)  lcd接这6条腿
 #include <EEPROM.h>
@@ -118,7 +118,7 @@ void disable()
   digitalWrite(2,LOW);   //pin2 拉低
 }
 
-uint32_t la=900000;  //15分钟熄灭背光可以节省大约1.7ma电流
+uint32_t la;  //15分钟熄灭背光
 uint8_t getkey()
 { //获取键盘值，返回  1=a摁下，2=b摁下，3=ab都摁下
   uint8_t ret=0;
@@ -138,8 +138,11 @@ uint8_t getkey()
   digitalWrite(10,sso);
   digitalWrite(12,miso);
   digitalWrite(13,scko);
-  if(ret!=0)   //有摁键就15分钟内亮背光
-  laon();
+  if(ret!=0 && la<millis()) {   //有摁键就15分钟内亮背光
+   waitKeyUp();
+    laon();
+    ret=0;
+  }
   return ret;
 }
 
@@ -148,7 +151,7 @@ void ad()
   float val;  //存放中间结果
   boolean A5V,O11;
   A5V=digitalRead(A5); //保存A5的值
-  O11=digitalRead(O11);
+  O11=digitalRead(11);
   pinMode(A5,INPUT);
   digitalWrite(A5,LOW);  
   digitalWrite(A4,LOW);
@@ -721,13 +724,13 @@ void disptime()
   if(delay60>0) delay60--;
   if(la>millis() | delay60==0) {
     delay60=30;
-  pinMode(11,OUTPUT);
-  O11=digitalRead(11);
-  digitalWrite(11,HIGH);
-  Wire.begin();
-  DS3231_get(&t);
-  swd=DS3231_get_treg(); //芯片温度
-  digitalWrite(11,O11);
+    pinMode(11,OUTPUT);
+    O11=digitalRead(11);
+    digitalWrite(11,HIGH);
+    Wire.begin();
+    DS3231_get(&t);
+    swd=DS3231_get_treg(); //芯片温度
+    digitalWrite(11,O11);
   }
   //map()温度校准
   wd=(swd - wdin_min) * (wdout_max - wdout_min)/(wdin_max - wdin_min) + wdout_min;
@@ -805,6 +808,7 @@ void dispHistory() {
       sprintf(dispbuff,"%03d %03d %03d %03d ",ic[2],ic[3],ic[4],ic[5]);
       lcd.setCursor(0, 1);  //设置光标位置到第二行的左边
       lcd.print(dispbuff);   //显示buff到第二行
+      Serial.println(dispbuff); //输出到串口
     }
     else{
       lcd.setCursor(13,1);
@@ -816,7 +820,6 @@ void dispHistory() {
     i=true;
     disptime();
   }
-  Serial.println(dispbuff); //输出到串口
 }
 boolean have100ma[6]={
   false,false,false,false,false,false};
@@ -868,12 +871,12 @@ void sleep_ms(uint32_t ms)
   unsigned long start ;
   start= millis()+ms;
   set_sleep_mode(SLEEP_MODE_IDLE);
-/*
+  /*
 cli();
-  CLKPR =B10000000;
-CLKPR = B00000011;   //调频率16Mhz到2Mhz  则速率延迟都要/8
-sei();
-*/
+   CLKPR =B10000000;
+   CLKPR = B00000011;   //调频率16Mhz到2Mhz  则速率延迟都要/8
+   sei();
+   */
   while (millis() < start){
     sleep_enable();
     sleep_cpu();  //enter sleep mode
@@ -881,23 +884,23 @@ sei();
   }
   /*
 cli();
-CLKPR =B10000000;
-CLKPR = B00000000;   //调频率2Mhz到16Mhz  则速率延迟都要/8
-sei();
-*/
+   CLKPR =B10000000;
+   CLKPR = B00000000;   //调频率2Mhz到16Mhz  则速率延迟都要/8
+   sei();
+   */
 }
 void loop()
 { //循环
 
-if(la<millis()) digitalWrite(11,LOW); //背光关闭 15min
-else digitalWrite(11,HIGH);  //背光开
+  if(la<millis()) digitalWrite(11,LOW); //背光关闭 15min
+  else digitalWrite(11,HIGH);  //背光开
 
-if(ic[0]<10 & ic[1]<10 & ic[5]<10 & wd>wd_al)// 温度芯片附近不在冲放电，才进行温度报警  
+  if(ic[0]<10 & ic[1]<10 & ic[5]<10 & wd>wd_al)// 温度芯片附近不在冲放电，才进行温度报警  
     digitalWrite(11,millis()/100%2);  //背光煽动报警
   if(keydown() && dispHoldTime>millis())
     dispHistory();
   if(dida+1000>millis()) {
-sleep_ms(50);
+    sleep_ms(50);
     return;  //1秒一次执行下面的程序
   }
   Serial.println(CLKPR,HEX);
@@ -908,4 +911,5 @@ sleep_ms(50);
   ad();  //测量
   dispHistory(); //显示dispse对应的值
 }
+
 
