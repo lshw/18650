@@ -1,3 +1,9 @@
+/*
+https://github.com/lshw/18650
+http://18650.cfido.com
+  liushiwei@gmail.com qq:10202
+   刘世伟 2014-08-08
+*/
 #define VER "1.6"
 //#define HAVE_CALIBRATION 1 //有这个后才会有电压电流校准功能，
 
