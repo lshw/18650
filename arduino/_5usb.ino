@@ -50,6 +50,8 @@ LiquidCrystal lcd(8,7,6,5,4,3); //(RS,EN,D4,D5,D6,D7)  lcd接这6条腿
 #define TOFULL 1 //第一步，先充电到满
 #define FULLTOZERO 2 //第二步，然后放电到空 测放电容量
 uint32_t sn; //序列号
+uint32_t dida=0,dispHoldTime=millis();
+int8_t dispse=0;
 float wd;   //实际温度值
 float wd_al; //报警温度值
 float swd;  //芯片读出温度
@@ -144,11 +146,12 @@ uint8_t getkey()
   digitalWrite(10,sso);
   digitalWrite(12,miso);
   digitalWrite(13,scko);
-  if(ret!=0 && la<millis()) {   //有摁键就15分钟内亮背光
-   waitKeyUp();
+  //if(ret!=0 && la<millis()) {   //有摁键就15分钟内亮背光
+   // for(;;) if(!digitalRead(12)==0 && !digitalRead(13)==0) break;
     laon();
-    ret=0;
-  }
+  //  dispse=0;
+  //  ret=0;
+ // }
   return ret;
 }
 
@@ -676,7 +679,8 @@ void setup()
   lcd.print("R1=");
   lcd.print(r);
   lcd.print("\x04           ");
-  disptime();
+  lcd.setCursor(0,1);
+  lcd.print("V" VER " " __DATE__);
   for(i1=0;i1<10;i1++) {
     if(getkey()) break;
     delay(200);   //delay 2s or keydown
@@ -685,9 +689,7 @@ void setup()
   MsTimer2::set(1000, calc_sum); // 1秒一次调用函数calc_sum进行累加ma时
   MsTimer2::start();
 }
-uint32_t dida=0,dispHoldTime=millis();
 uint8_t keya=0;
-int8_t dispse=0;
 boolean keydown()
 { //键盘处理，有键按下，会进来
   switch(getkey()) {
